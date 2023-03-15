@@ -14,13 +14,19 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 // Separate AI Entity Behaviour
 public class MrXAI {
     MyGameStateFactory myGameStateFactory;
-    Tree<Pair<Board.GameState, Pair<Move, Double>>> stateTree; //Gamestate and Evaluation bar for that respective gamestate
+
+    Board.GameState currentState;
+
+//  Stores possible game states and their scores and the move to get there.
+    List<PossibleGameState> futureStates;
 
     //Wrapper for our GameState values
     final class PossibleGameState {
         final private Board.GameState gameState;
         final private double evaluation;
-        final private Move move; //move to get you to this state from the previous state
+
+//      Move to get you to this state from the previous state.
+        final private Move move;
 
         public PossibleGameState(Board.GameState gameState, double evaluation, Move move) {
             this.gameState = gameState;
@@ -43,35 +49,28 @@ public class MrXAI {
 
     MrXAI () {
         this.myGameStateFactory = new MyGameStateFactory();
-        this.stateTree = new Tree<>();
+        this.futureStates = new LinkedList<>();
     }
 
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board) {
-        Board.GameState currentState = this.generateGameState(board);
-        stateTree.getRoot().setValue(new Pair<>(currentState, new Pair<>(null, 0.0)));
+        this.currentState = this.generateGameState(board);
 
         //Iterate each of the moves and add each one to the tree
-        for (Move move : board.getAvailableMoves()) {
+        for (Move move : this.currentState.getAvailableMoves()) {
             Board.GameState newGameState = currentState.advance(move);
-            stateTree.getRoot().addChild(new Pair<>(newGameState, new Pair<>(move, 0.0)));
+            this.futureStates.add(new PossibleGameState(newGameState, 0.0, move));
         }
 
-        double maxScore = 0;
-        Move bestMove;
+        PossibleGameState bestGameState = this.futureStates.get(0) ;
         //move in the inner pair is the move from the previous state that gets you to this state
-        for (Pair<Board.GameState, Pair<Move, Double>> node : stateTree) {
-            if (!node.equals(currentState)) {
-                if (maxScore < node.right().right()) {
-                    bestMove = node.right().left();
-                    maxScore = node.right().right();
-                }
+        for (PossibleGameState state : this.futureStates) {
+            if (state.getEvaluation() > bestGameState.getEvaluation()) {
+                bestGameState = state;
             }
         }
 
-        // returns a random move, replace with your own implementation
-        var moves = board.getAvailableMoves().asList();
-        return moves.get(new Random().nextInt(moves.size()));
+        return bestGameState.getMove();
     }
 
     //Helper method
