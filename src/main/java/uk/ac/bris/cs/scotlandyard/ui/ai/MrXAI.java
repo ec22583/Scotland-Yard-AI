@@ -2,7 +2,6 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
 import java.util.*;
@@ -14,63 +13,52 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 // Separate AI Entity Behaviour
 public class MrXAI {
     MyGameStateFactory myGameStateFactory;
+    GameSetup gameSetup;
+    Score score;
 
     Board.GameState currentState;
 
 //  Stores possible game states and their scores and the move to get there.
     List<PossibleGameState> futureStates;
 
-    //Wrapper for our GameState values
-    final class PossibleGameState {
-        final private Board.GameState gameState;
-        final private double evaluation;
-
-//      Move to get you to this state from the previous state.
-        final private Move move;
-
-        public PossibleGameState(Board.GameState gameState, double evaluation, Move move) {
-            this.gameState = gameState;
-            this.evaluation = evaluation;
-            this.move = move;
-        }
-
-        public Board.GameState getGameState() {
-            return gameState;
-        }
-
-        public double getEvaluation() {
-            return evaluation;
-        }
-
-        public Move getMove() {
-            return move;
-        }
-    }
-
     MrXAI () {
         this.myGameStateFactory = new MyGameStateFactory();
         this.futureStates = new LinkedList<>();
+        this.score = new Score();
+//        this.score.addWeight(new ConnectionWeight(2));
+        this.score.addWeight(new DistanceWeights.SumDistance());
+        this.score.addWeight(new DistanceWeights.MinimumDistance(2));
+        this.gameSetup = null;
     }
 
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board) {
+//      Store copy of game setup but with mrX always revealed.
+
+        this.futureStates.clear();
         this.currentState = this.generateGameState(board);
 
         //Iterate each of the moves and add each one to the tree
         for (Move move : this.currentState.getAvailableMoves()) {
             Board.GameState newGameState = currentState.advance(move);
-            this.futureStates.add(new PossibleGameState(newGameState, 0.0, move));
+            this.futureStates.add(
+                    new PossibleGameState(
+                            newGameState,
+                            score.calculateScore(newGameState),
+                            move
+                    )
+            );
         }
 
         PossibleGameState bestGameState = this.futureStates.get(0) ;
         //move in the inner pair is the move from the previous state that gets you to this state
         for (PossibleGameState state : this.futureStates) {
-            if (state.getEvaluation() > bestGameState.getEvaluation()) {
+            if (state.evaluation() > bestGameState.evaluation()) {
                 bestGameState = state;
             }
         }
 
-        return bestGameState.getMove();
+        return bestGameState.move();
     }
 
     //Helper method
@@ -97,7 +85,15 @@ public class MrXAI {
     }
 
     private Board.GameState generateGameState (Board board) {
-        GameSetup gameSetup = board.getSetup();
+        List<Boolean> moveSetup = new LinkedList<>();
+//      Ensures that MrX is always visible to AI.
+        for (int i = 0; i < (board.getSetup().moves.size() - board.getMrXTravelLog().size()); i++) {
+            moveSetup.add(true);
+        }
+        gameSetup = new GameSetup(
+                board.getSetup().graph,
+                ImmutableList.copyOf(moveSetup)
+        );
 
         int location = board
                 .getAvailableMoves()
