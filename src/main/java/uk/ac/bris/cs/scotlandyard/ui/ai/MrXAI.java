@@ -25,7 +25,7 @@ public class MrXAI {
         gameState = this.generateGameState(board);
         gameStateTree = new Tree<>(new TreeGameState(gameState));
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 2000; i++) {
             boolean win = this.playRandomTurn(gameStateTree);
         }
 
@@ -33,17 +33,26 @@ public class MrXAI {
                 this.gameStateTree.getChildNodes().stream().parallel().map(t -> t.getValue()).toList();
 
 //      Assume first child is best.
-        int mostWins = nextTreeGameStates.get(0).getWins();
+//      Calculates the average score of the path.
+        double highestScore = Double.valueOf(nextTreeGameStates.get(0).getWins())
+                / Double.valueOf(nextTreeGameStates.get(0).getTotalPlays());
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
         for (TreeGameState treeGameState : nextTreeGameStates) {
-            if (treeGameState.getWins() > mostWins) {
-                mostWins = treeGameState.getWins();
+            if (Double.valueOf(nextTreeGameStates.get(0).getWins())
+                    / Double.valueOf(nextTreeGameStates.get(0).getTotalPlays()) > highestScore) {
+                highestScore = Double.valueOf(nextTreeGameStates.get(0).getWins())
+                        / Double.valueOf(nextTreeGameStates.get(0).getTotalPlays());
                 bestMove = treeGameState.getPreviousMove();
             }
         }
 
         return bestMove;
     }
+
+//    static double calculateScore (TreeGameState treeGameState) {
+//        return (Double.valueOf(treeGameState.getWins())/Double.valueOf(treeGameState.getTotalPlays()))
+//                +
+//    }
 
 //  Method to add child to tree based on random moves.
 //  Returns whether the game was a win (1 = win, 0 = loss).
@@ -125,7 +134,8 @@ public class MrXAI {
         Player mrX = new Player(MRX, MrXAI.getTicketsForPlayer(board, MRX) , location);
 
         //Get detective pieces
-        Set<Piece> detectivePieces = new HashSet<>(board.getPlayers()
+        Set<Piece> detectivePieces = new HashSet<>(board
+                .getPlayers()
                 .stream()
                 .parallel()
                 .filter(p -> p.isDetective())
@@ -138,11 +148,10 @@ public class MrXAI {
                 .parallel()
                 .map((piece) -> new Player(
                             piece,
-
 //                          Generates tickets for piece.
                             MrXAI.getTicketsForPlayer(board, piece),
-
-//                          Piece must be cast to a Detective. (For type safety)
+//                          Piece must be cast to a Detective. Not an issue since mrx filtered out earlier
+//                            (For type safety). .get() fine as piece always is a detective.
                             board.getDetectiveLocation((Piece.Detective) piece).get()
                     )
                 )
