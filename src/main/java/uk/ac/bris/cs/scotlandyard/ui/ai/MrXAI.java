@@ -8,57 +8,17 @@ import java.util.*;
 
 import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
-//0.0 is the neutral evaluation bar
-
 // Separate AI Entity Behaviour
 public class MrXAI {
     MyGameStateFactory myGameStateFactory;
     GameSetup gameSetup;
-    Score score;
-
-    Board.GameState currentState;
-
-//  Stores possible game states and their scores and the move to get there.
-    List<PossibleGameState> futureStates;
 
     MrXAI () {
-        this.myGameStateFactory = new MyGameStateFactory();
-        this.futureStates = new LinkedList<>();
-        this.score = new Score();
-//        this.score.addWeight(new ConnectionWeight(2));
-        this.score.addWeight(new DistanceWeights.SumDistance());
-        this.score.addWeight(new DistanceWeights.MinimumDistance(2));
-        this.gameSetup = null;
     }
 
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board) {
-//      Store copy of game setup but with mrX always revealed.
-
-        this.futureStates.clear();
-        this.currentState = this.generateGameState(board);
-
-        //Iterate each of the moves and add each one to the tree
-        for (Move move : this.currentState.getAvailableMoves()) {
-            Board.GameState newGameState = currentState.advance(move);
-            this.futureStates.add(
-                    new PossibleGameState(
-                            newGameState,
-                            score.calculateScore(newGameState),
-                            move
-                    )
-            );
-        }
-
-        PossibleGameState bestGameState = this.futureStates.get(0) ;
-        //move in the inner pair is the move from the previous state that gets you to this state
-        for (PossibleGameState state : this.futureStates) {
-            if (state.evaluation() > bestGameState.evaluation()) {
-                bestGameState = state;
-            }
-        }
-
-        return bestGameState.move();
+        return null;
     }
 
     //Helper method
