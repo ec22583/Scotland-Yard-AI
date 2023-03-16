@@ -12,11 +12,12 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 public class MrXAI {
     private MyGameStateFactory myGameStateFactory;
     private GameSetup gameSetup;
-    private Tree<TreeGameState> gameStateTree;
     private Board.GameState gameState;
+    private MCTS mcts;
 
     public MrXAI () {
         this.myGameStateFactory = new MyGameStateFactory();
+        this.mcts = new MCTS();
     }
 
     //Average wins: Wins / total plays. Helper function to generateBestMove
@@ -29,22 +30,19 @@ public class MrXAI {
     public Move generateBestMove (Board board) {
         this.gameSetup = board.getSetup();
         gameState = this.generateGameState(board);
-        gameStateTree = new Tree<>(new TreeGameState(gameState));
 
-        //How many tree explorations AI should perform
-        for (int i = 0; i < 3000; i++) {
-            boolean win = this.playRandomTurn(gameStateTree);
-        }
+        this.mcts.updateGameState(gameState);
+        Tree<TreeGameState> gameStateTree = this.mcts.run();
 
-        List<TreeGameState> nextTreeGameStates = this.gameStateTree.getChildValues();
+        List<TreeGameState> nextTreeGameStates = gameStateTree.getChildValues();
 
 //      Assume first child is best.
 //      Calculates the average score of the path.
-        double averageScore = getAverageScore(nextTreeGameStates.get(0));
+        double averageScore = this.getAverageScore(nextTreeGameStates.get(0));
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
 
         for (TreeGameState treeGameState : nextTreeGameStates) {
-            double newTreeGameStateAvgScore = getAverageScore(treeGameState);
+            double newTreeGameStateAvgScore = this.getAverageScore(treeGameState);
             if (newTreeGameStateAvgScore > averageScore) {
                 averageScore = newTreeGameStateAvgScore;
                 bestMove = treeGameState.getPreviousMove();
@@ -52,40 +50,6 @@ public class MrXAI {
         }
 
         return bestMove;
-    }
-
-//  Method to add child to tree based on random moves.
-//  Returns whether the game was a win (1 = win, 0 = loss).
-    private boolean playRandomTurn (Tree<TreeGameState> currentNode) {
-        List<Move> availableMoves = currentNode.getValue().getGameState().getAvailableMoves().asList();
-        Move randomMove = availableMoves.get(new Random().nextInt(availableMoves.size()));
-
-        Board.GameState newGameState = currentNode.getValue().getGameState().advance(randomMove);
-        TreeGameState newTreeGameState = new TreeGameState(newGameState, randomMove);
-        Optional<Tree<TreeGameState>> optionalChild =
-                this.gameStateTree.getChildNodeEqualling(newTreeGameState);
-
-        Tree<TreeGameState> newTreeNode;
-        if (optionalChild.isEmpty()) {
-            newTreeNode = new Tree<>(newTreeGameState);
-            currentNode.addChildNode(newTreeNode);
-        }
-        else newTreeNode = optionalChild.get(); //child Contains a value
-
-        boolean win;
-        if (!newTreeNode.getValue().getGameState().getWinner().isEmpty()) {
-//          Anchor case.
-            win = newGameState.getWinner().contains(MRX);
-        }
-        else {
-//          Recursive case.
-            win = this.playRandomTurn(newTreeNode);
-        }
-
-        if (win) currentNode.getValue().addWin();
-        else currentNode.getValue().addLoss();
-
-        return win;
     }
 
     //Helper method
