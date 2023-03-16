@@ -36,7 +36,7 @@ public class MyAi implements Ai {
 //		Create game state from board
 //		Check if current player is MrX.
 		if (availableMoves.get(0).commencedBy().isMrX()) {
-			return mrXAI.generateBestMove(board);
+			return mrXAI.generateBestMove(board, timeoutPair);
 		}
 //		Run detectives' turn
 		else {

@@ -2,9 +2,16 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.FakeTimeLimiter;
+import com.google.common.util.concurrent.SimpleTimeLimiter;
+import com.google.common.util.concurrent.TimeLimiter;
+import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
+import java.sql.Time;
 import java.util.*;
+import java.lang.Thread;
+import java.util.concurrent.*;
 
 import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
@@ -12,12 +19,11 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 public class MrXAI {
     private MyGameStateFactory myGameStateFactory;
     private GameSetup gameSetup;
-    private Board.GameState gameState;
-    private MCTS mcts;
+    Tree<TreeGameState> gameStateTree;
+    Board.GameState gameState;
 
     public MrXAI () {
         this.myGameStateFactory = new MyGameStateFactory();
-        this.mcts = new MCTS();
     }
 
     //Average wins: Wins / total plays. Helper function to generateBestMove
@@ -27,12 +33,27 @@ public class MrXAI {
     }
 
     //Evaluate the Best move from a Game tree
-    public Move generateBestMove (Board board) {
+    public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
         this.gameSetup = board.getSetup();
-        gameState = this.generateGameState(board);
+        this.gameState = this.generateGameState(board);
+        this.gameStateTree = new Tree<>(new TreeGameState(gameState));
 
-        this.mcts.updateGameState(gameState);
-        Tree<TreeGameState> gameStateTree = this.mcts.run();
+        MCTS mcts = new MCTS(gameStateTree);
+//      Starts thread that runs the Monte Carlo Tree Search.
+        mcts.start();
+
+        try {
+//          Sleeps the program for the time - 500 milliseconds.
+            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 500);
+
+//      Handles if an interrupt is thrown towards the current method while asleep.
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
+
+//      Interrupts the algorithm which causes it to stop testing paths.
+        mcts.interrupt();
 
         List<TreeGameState> nextTreeGameStates = gameStateTree.getChildValues();
 
@@ -40,15 +61,17 @@ public class MrXAI {
 //      Calculates the average score of the path.
         double averageScore = this.getAverageScore(nextTreeGameStates.get(0));
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
-
+        int childPlays = 0;
         for (TreeGameState treeGameState : nextTreeGameStates) {
             double newTreeGameStateAvgScore = this.getAverageScore(treeGameState);
+            childPlays += treeGameState.getTotalPlays();
             if (newTreeGameStateAvgScore > averageScore) {
                 averageScore = newTreeGameStateAvgScore;
                 bestMove = treeGameState.getPreviousMove();
             }
         }
 
+        System.out.println(String.format("Total number of plays for this round (according to parent): %s, (according to child): %s", gameStateTree.getValue().getTotalPlays(), childPlays));
         return bestMove;
     }
 

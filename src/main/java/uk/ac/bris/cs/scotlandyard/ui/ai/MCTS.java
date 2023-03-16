@@ -10,9 +10,13 @@ import java.util.Random;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
 // MCTS Algorithm (Monte Carlo tree search
-public class MCTS {
+public class MCTS extends Thread {
     private Tree<TreeGameState> gameStateTree;
-    private Board.GameState startGameState;
+
+    public MCTS (Tree<TreeGameState> tree) {
+        this.gameStateTree = tree;
+
+    }
 
 //  Recursively plays a turn (from available moves from currentNode's game state) and updates the tree.
 //  Once game is finished, adds the win or loss statistics up the tree recursively.
@@ -48,20 +52,11 @@ public class MCTS {
         return win;
     }
 
-//  Updates the game state used in the AI.
-    public void updateGameState(Board.GameState gameState){
-        this.startGameState = gameState;
-    }
-
     //Main component to execute the algorithm
-    public Tree<TreeGameState> run () {
-        this.gameStateTree = new Tree<>(new TreeGameState(this.startGameState));
-
-        //How many tree explorations AI should perform
-        for (int i = 0; i < 3000; i++) {
+    public void run () {
+        while(!Thread.interrupted()) {
             this.playTurn(this.gameStateTree);
         }
-
-        return this.gameStateTree;
     }
+
 }
