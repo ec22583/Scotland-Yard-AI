@@ -9,7 +9,7 @@ import java.util.Random;
 
 import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
-// MCTS Algorithm (Monte Carlo tree search
+// MCTS Algorithm (Monte Carlo tree search)
 public class MCTS extends Thread {
     private Tree<TreeGameState> gameStateTree;
 

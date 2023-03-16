@@ -61,17 +61,16 @@ public class MrXAI {
 //      Calculates the average score of the path.
         double averageScore = this.getAverageScore(nextTreeGameStates.get(0));
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
-        int childPlays = 0;
+
         for (TreeGameState treeGameState : nextTreeGameStates) {
             double newTreeGameStateAvgScore = this.getAverageScore(treeGameState);
-            childPlays += treeGameState.getTotalPlays();
+
             if (newTreeGameStateAvgScore > averageScore) {
                 averageScore = newTreeGameStateAvgScore;
                 bestMove = treeGameState.getPreviousMove();
             }
         }
 
-        System.out.println(String.format("Total number of plays for this round (according to parent): %s, (according to child): %s", gameStateTree.getValue().getTotalPlays(), childPlays));
         return bestMove;
     }
 

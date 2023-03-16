@@ -1,44 +1,36 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
-import org.checkerframework.checker.nullness.Opt;
 
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Optional;
 
 public class Tree<T> {
     private T value;
-    private List<Tree<T>> children;
-    private ConcurrentLinkedQueue<Tree<T>> queue;
+    private ConcurrentLinkedQueue<Tree<T>> children;
 
     public Tree () {
-//        this.children = new LinkedList<>();
-        this.queue = new ConcurrentLinkedQueue<>();
+        this.children = new ConcurrentLinkedQueue<>();
     }
 
     public Tree (T value) {
         this.value = value;
-//        this.children = new LinkedList<>();
-        this.queue = new ConcurrentLinkedQueue<>();
+        this.children = new ConcurrentLinkedQueue<>();
     }
 
     public void addChildNode (Tree<T> child) {
-//        this.children.add(child);
-        this.queue.add(child);
+        this.children.add(child);
     }
 
     public void addChildNodes (Collection<Tree<T>> children) {
-//        this.children.addAll(children);
-        this.queue.addAll(children);
+        this.children.addAll(children);
     }
 
     public Tree<T> addChildValue (T value) {
         Tree<T> newTree = new Tree<>(value);
-//        this.children.add(newTree);
-        this.queue.add(newTree);
+        this.children.add(newTree);
         return newTree;
     }
 
@@ -48,18 +40,15 @@ public class Tree<T> {
                 .parallel()
                 .map(v -> new Tree<T>(v))
                 .toList();
-
-//        this.children.addAll(newTrees);
-        this.queue.addAll(newTrees);
+        this.children.addAll(newTrees);
     }
 
     public List<Tree<T>> getChildNodes () {
-//        return ImmutableList.copyOf(this.children);
-        return ImmutableList.copyOf(this.queue);
+        return ImmutableList.copyOf(this.children);
     }
 
     public List<T> getChildValues () {
-        return this.queue
+        return this.children
                 .stream()
                 .parallel()
                 .map(n -> n.getValue())
@@ -67,7 +56,7 @@ public class Tree<T> {
     }
 
     public Optional<Tree<T>> getChildNodeEqualling (T other) {
-        for (Tree<T> child : this.queue) {
+        for (Tree<T> child : this.children) {
             if (child.getValue().equals(other)) {
                 return Optional.of(child);
             }
@@ -85,7 +74,6 @@ public class Tree<T> {
     }
 
     public void removeChildNode (Tree<T> child) {
-//        this.children.remove(child);
-        this.queue.remove(child);
+        this.children.remove(child);
     }
 }
