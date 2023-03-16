@@ -19,29 +19,40 @@ public class MrXAI {
         this.myGameStateFactory = new MyGameStateFactory();
     }
 
+    //Average wins: Wins / total plays. Helper function to generateBestMove
+    public double getAverageScore(TreeGameState treeGameState){
+        return  Double.valueOf(treeGameState.getWins())
+                / Double.valueOf(treeGameState.getTotalPlays());
+    }
+
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board) {
         this.gameSetup = board.getSetup();
         gameState = this.generateGameState(board);
         gameStateTree = new Tree<>(new TreeGameState(gameState));
 
+        //How many tree explorations AI should perform
         for (int i = 0; i < 2000; i++) {
             boolean win = this.playRandomTurn(gameStateTree);
         }
 
         List<TreeGameState> nextTreeGameStates =
-                this.gameStateTree.getChildNodes().stream().parallel().map(t -> t.getValue()).toList();
+                this.gameStateTree
+                        .getChildNodes()
+                        .stream()
+                        .parallel()
+                        .map(t -> t.getValue())
+                        .toList();
 
 //      Assume first child is best.
 //      Calculates the average score of the path.
-        double highestScore = Double.valueOf(nextTreeGameStates.get(0).getWins())
-                / Double.valueOf(nextTreeGameStates.get(0).getTotalPlays());
+        double averageScore = getAverageScore(nextTreeGameStates.get(0));
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
+
         for (TreeGameState treeGameState : nextTreeGameStates) {
-            if (Double.valueOf(nextTreeGameStates.get(0).getWins())
-                    / Double.valueOf(nextTreeGameStates.get(0).getTotalPlays()) > highestScore) {
-                highestScore = Double.valueOf(nextTreeGameStates.get(0).getWins())
-                        / Double.valueOf(nextTreeGameStates.get(0).getTotalPlays());
+            double newTreeGameStateAvgScore = getAverageScore(treeGameState);
+            if (newTreeGameStateAvgScore > averageScore) {
+                averageScore = newTreeGameStateAvgScore;
                 bestMove = treeGameState.getPreviousMove();
             }
         }
@@ -61,7 +72,6 @@ public class MrXAI {
         Move randomMove = availableMoves.get(new Random().nextInt(availableMoves.size()));
 
         Board.GameState newGameState = currentNode.getValue().getGameState().advance(randomMove);
-//        System.out.println("Game State Move: " + randomMove);
         TreeGameState newTreeGameState = new TreeGameState(newGameState, randomMove);
         Optional<Tree<TreeGameState>> optionalChild =
                 this.gameStateTree.getChildNodeEqualling(newTreeGameState);
@@ -70,24 +80,22 @@ public class MrXAI {
         if (optionalChild.isEmpty()) {
             newTreeNode = new Tree<>(newTreeGameState);
             currentNode.addChildNode(newTreeNode);
-        } else {
-            newTreeNode = optionalChild.get();
         }
+        else newTreeNode = optionalChild.get(); //child Contains a value
+
         boolean win;
         if (!newTreeNode.getValue().getGameState().getWinner().isEmpty()) {
 //          Anchor case.
             win = newGameState.getWinner().contains(MRX);
-//            System.out.println("Reached anchor case");
-        } else {
+        }
+        else {
 //          Recursive case.
-//            System.out.println("Reached recursive case");
             win = this.playRandomTurn(newTreeNode);
         }
-        if (win) {
-            currentNode.getValue().addWin();
-        } else {
-            currentNode.getValue().addLoss();
-        }
+
+        if (win) currentNode.getValue().addWin();
+        else currentNode.getValue().addLoss();
+
         return win;
     }
 

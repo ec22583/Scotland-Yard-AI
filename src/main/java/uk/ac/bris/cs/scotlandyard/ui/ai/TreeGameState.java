@@ -3,6 +3,8 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
+
+//Our own Tree data structure to store our game states
 public class TreeGameState {
     private Board.GameState gameState;
     private int totalPlays;
