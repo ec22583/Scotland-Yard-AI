@@ -28,8 +28,10 @@ public class Tree<T> {
         this.children.addAll(children);
     }
 
-    public void addChildValue (T value) {
-        this.children.add(new Tree<>(value));
+    public Tree<T> addChildValue (T value) {
+        Tree<T> newTree = new Tree<>(value);
+        this.children.add(newTree);
+        return newTree;
     }
 
     public void addChildValues (List<T> values) {
