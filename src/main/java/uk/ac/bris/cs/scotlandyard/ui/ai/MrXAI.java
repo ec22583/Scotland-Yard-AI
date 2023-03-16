@@ -32,17 +32,11 @@ public class MrXAI {
         gameStateTree = new Tree<>(new TreeGameState(gameState));
 
         //How many tree explorations AI should perform
-        for (int i = 0; i < 2000; i++) {
+        for (int i = 0; i < 3000; i++) {
             boolean win = this.playRandomTurn(gameStateTree);
         }
 
-        List<TreeGameState> nextTreeGameStates =
-                this.gameStateTree
-                        .getChildNodes()
-                        .stream()
-                        .parallel()
-                        .map(t -> t.getValue())
-                        .toList();
+        List<TreeGameState> nextTreeGameStates = this.gameStateTree.getChildValues();
 
 //      Assume first child is best.
 //      Calculates the average score of the path.
