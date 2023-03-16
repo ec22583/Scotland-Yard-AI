@@ -10,17 +10,17 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
 // Separate AI Entity Behaviour
 public class MrXAI {
-    MyGameStateFactory myGameStateFactory;
-    GameSetup gameSetup;
-    Tree<TreeGameState> gameStateTree;
-    Board.GameState gameState;
+    private MyGameStateFactory myGameStateFactory;
+    private GameSetup gameSetup;
+    private Tree<TreeGameState> gameStateTree;
+    private Board.GameState gameState;
 
-    MrXAI () {
+    public MrXAI () {
         this.myGameStateFactory = new MyGameStateFactory();
     }
 
     //Average wins: Wins / total plays. Helper function to generateBestMove
-    public double getAverageScore(TreeGameState treeGameState){
+    private double getAverageScore(TreeGameState treeGameState){
         return  Double.valueOf(treeGameState.getWins())
                 / Double.valueOf(treeGameState.getTotalPlays());
     }
@@ -53,11 +53,6 @@ public class MrXAI {
 
         return bestMove;
     }
-
-//    static double calculateScore (TreeGameState treeGameState) {
-//        return (Double.valueOf(treeGameState.getWins())/Double.valueOf(treeGameState.getTotalPlays()))
-//                +
-//    }
 
 //  Method to add child to tree based on random moves.
 //  Returns whether the game was a win (1 = win, 0 = loss).
