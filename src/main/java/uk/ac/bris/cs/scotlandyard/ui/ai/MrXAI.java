@@ -12,13 +12,74 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 public class MrXAI {
     MyGameStateFactory myGameStateFactory;
     GameSetup gameSetup;
+    Tree<TreeGameState> gameStateTree;
+    Board.GameState gameState;
 
     MrXAI () {
+        this.myGameStateFactory = new MyGameStateFactory();
     }
 
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board) {
-        return null;
+        this.gameSetup = board.getSetup();
+        gameState = this.generateGameState(board);
+        gameStateTree = new Tree<>(new TreeGameState(gameState));
+
+        for (int i = 0; i < 1000; i++) {
+            boolean win = this.playRandomTurn(gameStateTree);
+        }
+
+        List<TreeGameState> nextTreeGameStates =
+                this.gameStateTree.getChildNodes().stream().parallel().map(t -> t.getValue()).toList();
+
+//      Assume first child is best.
+        int mostWins = nextTreeGameStates.get(0).getWins();
+        Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
+        for (TreeGameState treeGameState : nextTreeGameStates) {
+            if (treeGameState.getWins() > mostWins) {
+                mostWins = treeGameState.getWins();
+                bestMove = treeGameState.getPreviousMove();
+            }
+        }
+
+        return bestMove;
+    }
+
+//  Method to add child to tree based on random moves.
+//  Returns whether the game was a win (1 = win, 0 = loss).
+    private boolean playRandomTurn (Tree<TreeGameState> currentNode) {
+        List<Move> availableMoves = currentNode.getValue().getGameState().getAvailableMoves().asList();
+        Move randomMove = availableMoves.get(new Random().nextInt(availableMoves.size()));
+
+        Board.GameState newGameState = currentNode.getValue().getGameState().advance(randomMove);
+//        System.out.println("Game State Move: " + randomMove);
+        TreeGameState newTreeGameState = new TreeGameState(newGameState, randomMove);
+        Optional<Tree<TreeGameState>> optionalChild =
+                this.gameStateTree.getChildNodeEqualling(newTreeGameState);
+
+        Tree<TreeGameState> newTreeNode;
+        if (optionalChild.isEmpty()) {
+            newTreeNode = new Tree<>(newTreeGameState);
+            currentNode.addChildNode(newTreeNode);
+        } else {
+            newTreeNode = optionalChild.get();
+        }
+        boolean win;
+        if (!newTreeNode.getValue().getGameState().getWinner().isEmpty()) {
+//          Anchor case.
+            win = newGameState.getWinner().contains(MRX);
+//            System.out.println("Reached anchor case");
+        } else {
+//          Recursive case.
+//            System.out.println("Reached recursive case");
+            win = this.playRandomTurn(newTreeNode);
+        }
+        if (win) {
+            currentNode.getValue().addWin();
+        } else {
+            currentNode.getValue().addLoss();
+        }
+        return win;
     }
 
     //Helper method

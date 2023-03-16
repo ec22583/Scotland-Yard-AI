@@ -1,9 +1,11 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
+import org.checkerframework.checker.nullness.Opt;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 public class Tree<T> {
     private T value;
@@ -36,6 +38,16 @@ public class Tree<T> {
 
     public void addChildValue (T value) {
         this.children.add(new Tree<>(value));
+    }
+
+    public Optional<Tree<T>> getChildNodeEqualling (T other) {
+        for (Tree<T> child : this.children) {
+            if (child.getValue().equals(other)) {
+                return Optional.of(child);
+            }
+        }
+        return Optional.empty();
+
     }
 
     public void addChildValues (List<T> values) {
