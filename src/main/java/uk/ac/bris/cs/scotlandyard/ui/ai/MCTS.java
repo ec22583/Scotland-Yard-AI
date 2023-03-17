@@ -53,6 +53,7 @@ public class MCTS extends Thread {
     }
 
     //Main component to execute the algorithm
+    @Override
     public void run () {
         while(!Thread.interrupted()) {
             this.playTurn(this.gameStateTree);

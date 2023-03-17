@@ -42,15 +42,12 @@ public class MrXAI {
         try {
 //          Sleeps the program for the time - 500 milliseconds.
             Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 500);
-
-//      Handles if an interrupt is thrown towards the current method while asleep.
-        } catch (InterruptedException e) {
+        } catch (InterruptedException e) { // Handles if an interrupt is thrown towards the current method while asleep.
             Thread.currentThread().interrupt();
             return null;
         }
 
-//      Interrupts the algorithm which causes it to stop testing paths.
-        mcts.interrupt();
+        mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
 
         List<TreeGameState> nextTreeGameStates = gameStateTree.getChildValues();
 
@@ -94,9 +91,42 @@ public class MrXAI {
         return ImmutableMap.copyOf(ticketMap);
     }
 
+    //Helper function
+    private int getLocation(Board board){
+        int location = board
+                .getAvailableMoves()
+                .asList()
+                .get(0)
+                .source();
+
+        return location;
+    }
+
+    //Helper function. Get detectives
+    private ImmutableList<Player> getDetectives (Board board){
+
+        List<Player> detectives = new LinkedList<>(board
+                .getPlayers()
+                .stream()
+                .filter(p -> p.isDetective())
+                .map(piece -> new Player(
+                        piece,
+                        // Generates tickets for piece.
+                MrXAI.getTicketsForPlayer(board, piece),
+                        //  Piece must be cast to a Detective. Not an issue since mrx filtered out earlier
+                        // (For type safety). .get() fine as piece always is a detective.
+                board.getDetectiveLocation((Piece.Detective) piece).get()
+                ))
+                .toList()
+        );
+
+        return ImmutableList.copyOf(detectives);
+    }
+
     private Board.GameState generateGameState (Board board) {
         List<Boolean> moveSetup = new LinkedList<>();
-//      Ensures that MrX is always visible to AI.
+
+//      Ensures that MrX is always visible to AI. (Himself)
         for (int i = 0; i < (board.getSetup().moves.size() - board.getMrXTravelLog().size()); i++) {
             moveSetup.add(true);
         }
@@ -105,46 +135,18 @@ public class MrXAI {
                 ImmutableList.copyOf(moveSetup)
         );
 
-        int location = board
-                .getAvailableMoves()
-                .asList()
-                .get(0)
-                .source();
-
+        int location = getLocation(board);
         Player mrX = new Player(MRX, MrXAI.getTicketsForPlayer(board, MRX) , location);
+        ImmutableList<Player> detectives = getDetectives(board);
 
-        //Get detective pieces
-        Set<Piece> detectivePieces = new HashSet<>(board
-                .getPlayers()
-                .stream()
-                .parallel()
-                .filter(p -> p.isDetective())
-                .toList()
-        );
-
-//      All detectives
-        List<Player> detectives = detectivePieces
-                .stream()
-                .parallel()
-                .map((piece) -> new Player(
-                            piece,
-//                          Generates tickets for piece.
-                            MrXAI.getTicketsForPlayer(board, piece),
-//                          Piece must be cast to a Detective. Not an issue since mrx filtered out earlier
-//                            (For type safety). .get() fine as piece always is a detective.
-                            board.getDetectiveLocation((Piece.Detective) piece).get()
-                    )
-                )
-                .toList();
-
+        //Construct a new game state with parameters above
         Board.GameState gameState = myGameStateFactory.build(
                 gameSetup,
                 mrX,
-                ImmutableList.copyOf(detectives)
+                detectives
         );
 
         return gameState;
     }
-
 
 }
