@@ -51,8 +51,7 @@ public class MrXAI {
 
         List<TreeGameState> nextTreeGameStates = gameStateTree.getChildValues();
 
-//      Assume first child is best.
-//      Calculates the average score of the path.
+//      Assume first child is best. Calculates the average score of the path.
         double averageScore = this.getAverageScore(nextTreeGameStates.get(0));
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
 
@@ -116,7 +115,8 @@ public class MrXAI {
                         //  Piece must be cast to a Detective. Not an issue since mrx filtered out earlier
                         // (For type safety). .get() fine as piece always is a detective.
                 board.getDetectiveLocation((Piece.Detective) piece).get()
-                ))
+                )
+                )
                 .toList()
         );
 
@@ -148,5 +148,4 @@ public class MrXAI {
 
         return gameState;
     }
-
 }
