@@ -1,70 +1,69 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
+import uk.ac.bris.cs.scotlandyard.model.Move;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.Optional;
 
 //Our own implementation of a Tree data structure
-//Children are ConcurrentLinkedQueues to prevent potential concurrency issues
+//Children are ConcurrentHashMap to prevent potential concurrency issues
 public class Tree<T> {
     private T value;
-    private ConcurrentLinkedQueue<Tree<T>> children;
+//  Integer is hash code of T.
+    private ConcurrentHashMap<Integer, Tree<T>> children;
 
     public Tree () {
-        this.children = new ConcurrentLinkedQueue<>();
+        this.children = new ConcurrentHashMap<>();
     }
 
     public Tree (T value) {
         this.value = value;
-        this.children = new ConcurrentLinkedQueue<>();
+        this.children = new ConcurrentHashMap<>();
     }
 
     public void addChildNode (Tree<T> child) {
-        this.children.add(child);
+        this.children.put(child.hashCode(), child);
     }
 
     public void addChildNodes (Collection<Tree<T>> children) {
-        this.children.addAll(children);
+        Map<Integer, Tree<T>> childMap = new HashMap();
+        for (Tree<T> child : children) {
+            childMap.put(child.getValue().hashCode(), child);
+        }
+
+        this.children.putAll(childMap);
     }
 
     public Tree<T> addChildValue (T value) {
         Tree<T> newTree = new Tree<>(value);
-        this.children.add(newTree);
+        this.children.put(value.hashCode(), newTree);
         return newTree;
     }
 
     public void addChildValues (List<T> values) {
-        List<Tree<T>> newTrees =values
+        this.addChildNodes(values
                 .stream()
-                .parallel()
-                .map(v -> new Tree<T>(v))
-                .toList();
-        this.children.addAll(newTrees);
+                .map(v -> new Tree<>(v))
+                .toList()
+        );
     }
 
     public List<Tree<T>> getChildNodes () {
-        return ImmutableList.copyOf(this.children);
+        return ImmutableList.copyOf(this.children.values());
     }
 
     public List<T> getChildValues () {
-        return this.children
-                .stream()
-                .parallel()
-                .map(n -> n.getValue())
-                .toList();
+        return this.children.values().stream().map((v -> v.getValue())).toList();
     }
 
     public Optional<Tree<T>> getChildNodeEqualling (T other) {
-        for (Tree<T> child : this.children) {
-            if (child.getValue().equals(other)) {
-                return Optional.of(child);
-            }
+        if (this.children.containsKey(other.hashCode())) {
+            return Optional.of(this.children.get(other.hashCode()));
+        } else{
+            return Optional.empty();
         }
-        return Optional.empty();
-
     }
 
     public T getValue() {

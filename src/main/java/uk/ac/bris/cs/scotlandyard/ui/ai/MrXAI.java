@@ -52,21 +52,25 @@ public class MrXAI {
         this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run
         mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
 
-        List<TreeGameState> nextTreeGameStates = gameStateTree.getChildValues();
+        List<TreeGameState> nextTreeGameStates = new ArrayList<>(gameStateTree.getChildValues());
 
 //      Assume first child is best. Calculates the average score of the path.
         double averageScore = this.getAverageScore(nextTreeGameStates.get(0));
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
-
+        int childPlays = nextTreeGameStates.get(0).getTotalPlays();
+        nextTreeGameStates.remove(0);
         for (TreeGameState treeGameState : nextTreeGameStates) {
             double newTreeGameStateAvgScore = this.getAverageScore(treeGameState);
-//            System.out.println(String.format("Score: %s, Wins: %s, Plays: %s", newTreeGameStateAvgScore, treeGameState.getWins(), treeGameState.getTotalPlays()));
+            System.out.println(String.format("Score: %s, Wins: %s, Plays: %s", newTreeGameStateAvgScore, treeGameState.getWins(), treeGameState.getTotalPlays()));
+            childPlays += treeGameState.getTotalPlays();
 
             if (newTreeGameStateAvgScore > averageScore) {
                 averageScore = newTreeGameStateAvgScore;
                 bestMove = treeGameState.getPreviousMove();
             }
         }
+
+        System.out.println(String.format("Total plays for turn: %s, Sum of child plays: %s", gameStateTree.getValue().getTotalPlays(), childPlays));
         return bestMove;
     }
 

@@ -7,8 +7,8 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 //Our own data structure to store our game states
 public class TreeGameState {
     private Board.GameState gameState;
-    public int totalPlays;
-    public int wins;
+    private int totalPlays;
+    private int wins;
     private Move previousMove;
 
     public TreeGameState (Board.GameState gameState, Move previousMove) {
@@ -55,5 +55,10 @@ public class TreeGameState {
         if (other == null) return false;
         else if (other.getClass() != this.getClass()) return false; //Check (class type) safety
         else return this.previousMove == ((TreeGameState) other).previousMove;
+    }
+
+    @Override
+    public int hashCode () {
+        return this.previousMove.hashCode();
     }
 }
