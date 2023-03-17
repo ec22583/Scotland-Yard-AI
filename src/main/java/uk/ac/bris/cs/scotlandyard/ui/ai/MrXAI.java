@@ -60,14 +60,13 @@ public class MrXAI {
 
         for (TreeGameState treeGameState : nextTreeGameStates) {
             double newTreeGameStateAvgScore = this.getAverageScore(treeGameState);
-            System.out.println(String.format("Score: %s, Wins: %s, Plays: %s", newTreeGameStateAvgScore, treeGameState.getWins(), treeGameState.getTotalPlays()));
+//            System.out.println(String.format("Score: %s, Wins: %s, Plays: %s", newTreeGameStateAvgScore, treeGameState.getWins(), treeGameState.getTotalPlays()));
 
             if (newTreeGameStateAvgScore > averageScore) {
                 averageScore = newTreeGameStateAvgScore;
                 bestMove = treeGameState.getPreviousMove();
             }
         }
-
         return bestMove;
     }
 
