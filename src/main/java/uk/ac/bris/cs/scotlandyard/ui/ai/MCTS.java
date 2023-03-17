@@ -31,12 +31,13 @@ public class MCTS extends Thread {
     }
 
     //Helper to calculateUCB1. Used to process parent and child into appropriate values and types
-    static double processForUCB1 (double c, Tree<TreeGameState> parent ,TreeGameState child){
+    static double processForUCB1 (Tree<TreeGameState> parent ,TreeGameState child){
+        final double EXPLORATION_FACTOR = 0.2;
         double np = parent.getValue().getTotalPlays();
         double ni = child.getTotalPlays();
         double wi = child.getWins();
 
-        return calculateUCB1(c, np, ni, wi);
+        return calculateUCB1(EXPLORATION_FACTOR, np, ni, wi);
     }
 
     //Helper function to playTurn
@@ -72,12 +73,12 @@ public class MCTS extends Thread {
 //      All moves have been visited at least once, so we can use the UCT selection strategy.
         else {
             //Assume the first child is the best
-            double bestScore = MCTS.processForUCB1(0.8, currentNode, childValues.get(0));
+            double bestScore = MCTS.processForUCB1(currentNode, childValues.get(0));
             nextMove = childValues.get(0).getPreviousMove();
             childValues.remove(0);
 
             for (TreeGameState childValue : childValues) {
-                double currentChildScore = MCTS.processForUCB1(0.8, currentNode, childValue);
+                double currentChildScore = MCTS.processForUCB1(currentNode, childValue);
                 if (currentChildScore > bestScore) {
                     bestScore = currentChildScore;
                     nextMove = childValue.getPreviousMove();
