@@ -4,7 +4,7 @@ import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
 
-//Our own Tree data structure to store our game states
+//Our own data structure to store our game states
 public class TreeGameState {
     private Board.GameState gameState;
     public int totalPlays;
@@ -53,9 +53,7 @@ public class TreeGameState {
     @Override
     public boolean equals (Object other) {
         if (other == null) return false;
-        else if (other.getClass() != this.getClass()) return false;
-        else {
-            return this.previousMove == ((TreeGameState) other).previousMove;
-        }
+        else if (other.getClass() != this.getClass()) return false; //Check (class type) safety
+        else return this.previousMove == ((TreeGameState) other).previousMove;
     }
 }

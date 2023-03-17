@@ -34,7 +34,8 @@ public class MrXAI {
         try {
 //          Sleeps the program for the (time - 500 ms).
             Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 500);
-        } catch (InterruptedException e) { // Handles if an interrupt is thrown towards the current method while asleep.
+        } catch (InterruptedException e) {
+            // Handles if an interrupt is thrown towards the current method while asleep.
             Thread.currentThread().interrupt();
         }
 
@@ -57,9 +58,6 @@ public class MrXAI {
         double averageScore = this.getAverageScore(nextTreeGameStates.get(0));
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
 
-//        System.out.println(String.format("Number of child nodes: %s, number of available moves %s", gameStateTree.getChildNodes().size(), board.getAvailableMoves().size()));
-
-//        System.out.println(String.format("Total plays %s", gameStateTree.getValue().getTotalPlays()));
         for (TreeGameState treeGameState : nextTreeGameStates) {
             double newTreeGameStateAvgScore = this.getAverageScore(treeGameState);
             System.out.println(String.format("Score: %s, Wins: %s, Plays: %s", newTreeGameStateAvgScore, treeGameState.getWins(), treeGameState.getTotalPlays()));
@@ -113,6 +111,7 @@ public class MrXAI {
         List<Player> detectives = new LinkedList<>(board
                 .getPlayers()
                 .stream()
+                .parallel()
                 .filter(p -> p.isDetective())
                 .map(piece -> new Player(
                         piece,
@@ -146,11 +145,7 @@ public class MrXAI {
         ImmutableList<Player> detectives = getDetectives(board);
 
         //Construct a new game state with parameters above
-        Board.GameState gameState = myGameStateFactory.build(
-                gameSetup,
-                mrX,
-                detectives
-        );
+        Board.GameState gameState = myGameStateFactory.build(gameSetup, mrX, detectives);
 
         return gameState;
     }

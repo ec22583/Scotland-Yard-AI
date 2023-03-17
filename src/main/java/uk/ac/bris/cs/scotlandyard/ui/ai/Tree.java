@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.Optional;
 
+//Our own implementation of a Tree data structure
+//Children are ConcurrentLinkedQueues to prevent potential concurrency issues
 public class Tree<T> {
     private T value;
     private ConcurrentLinkedQueue<Tree<T>> children;

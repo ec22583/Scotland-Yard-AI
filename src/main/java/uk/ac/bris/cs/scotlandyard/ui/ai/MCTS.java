@@ -18,17 +18,42 @@ public class MCTS extends Thread {
         this.gameStateTree = tree;
 
     }
-
     /**
-     * @param c constant to balance exploration and exploitation
+     * @param c constant to balance exploration and exploitation (Higher for more exploration)
      * @param np number of visits of parent (current) node
      * @param ni number of visits of child node
-     * @param wi number of wins  for child node
+     * @param wi number of wins for child node
      */
     static double calculateUCB1 (double c, double np, double ni, double wi) {
         double avgScore = wi/ni;
         double explorationFactor = c * Math.sqrt(Math.log(np)/ni);
         return avgScore + explorationFactor;
+    }
+
+    //Helper to calculateUCB1. Used to process parent and child into appropriate values and types
+    static double processForUCB1 (double c, Tree<TreeGameState> parent ,TreeGameState child){
+        double np = parent.getValue().getTotalPlays();
+        double ni = child.getTotalPlays();
+        double wi = child.getWins();
+
+        return calculateUCB1(c, np, ni, wi);
+    }
+
+    //Helper function to playTurn
+    /**
+     @param moves List of yet to be filtered moves
+     @param childValues List<TreeGameState> -> List<Moves> in which used to remove from moves
+     */
+    private List<Move> removeMovesContaining (List<Move> moves, List<TreeGameState> childValues){
+        moves.removeAll(
+                childValues
+                        .stream()
+                        .parallel()
+                        .map(t -> t.getPreviousMove())
+                        .toList()
+                );
+
+        return moves;
     }
 
 //  Recursively plays a turn (from available moves from currentNode's game state) and updates the tree.
@@ -41,31 +66,18 @@ public class MCTS extends Thread {
 //      Not all moves from this game state have been searched yet.
         if (childValues.size() < availableMoves.size()) {
 //          Filters out all moves that have already been visited.
-            availableMoves.removeAll(
-                    childValues
-                            .stream()
-                            .map(t -> t.getPreviousMove())
-                            .toList()
-            );
-            nextMove = availableMoves.get(new Random().nextInt(availableMoves.size()));
+            List<Move> filteredAvailableMoves = removeMovesContaining(availableMoves, childValues);
+            nextMove = filteredAvailableMoves.get(new Random().nextInt(filteredAvailableMoves.size()));
         }
 //      All moves have been visited at least once, so we can use the UCT selection strategy.
         else {
-            double bestScore = MCTS.calculateUCB1(
-                    0.8,
-                    currentNode.getValue().getTotalPlays(),
-                    childValues.get(0).getTotalPlays(),
-                    childValues.get(0).getWins()
-            );
+            //Assume the first child is the best
+            double bestScore = MCTS.processForUCB1(0.8, currentNode, childValues.get(0));
             nextMove = childValues.get(0).getPreviousMove();
             childValues.remove(0);
+
             for (TreeGameState childValue : childValues) {
-                double currentChildScore = MCTS.calculateUCB1(
-                        0.8,
-                        currentNode.getValue().getTotalPlays(),
-                        childValue.getTotalPlays(),
-                        childValue.getWins()
-                );
+                double currentChildScore = MCTS.processForUCB1(0.8, currentNode, childValue);
                 if (currentChildScore > bestScore) {
                     bestScore = currentChildScore;
                     nextMove = childValue.getPreviousMove();
@@ -79,21 +91,17 @@ public class MCTS extends Thread {
                 this.gameStateTree.getChildNodeEqualling(newTreeGameState);
 
         Tree<TreeGameState> newTreeNode;
-        if (optionalChild.isEmpty()) {
-//          Returns the new Tree node created for value.
-            newTreeNode = currentNode.addChildValue(newTreeGameState);
-        }
-        else newTreeNode = optionalChild.get(); //child Contains a value
+        // Returns the new Tree node created for value.
+        if (optionalChild.isEmpty()) newTreeNode = currentNode.addChildValue(newTreeGameState);
+        // Child contains a value
+        else newTreeNode = optionalChild.get();
 
         boolean win;
-        if (!newTreeNode.getValue().getGameState().getWinner().isEmpty()) {
-//          Anchor case. Occurs once game has finished.
-            win = newGameState.getWinner().contains(MRX);
-        }
-        else {
-//          Recursive case. Traverse to the new tree node in the Tree<GameStateTree> (Plays another turn)
-            win = this.playTurn(newTreeNode);
-        }
+
+        // Anchor case. Occurs once game has finished.
+        if (!newTreeNode.getValue().getGameState().getWinner().isEmpty()) win = newGameState.getWinner().contains(MRX);
+        // Recursive case. Traverse to the new tree node in the Tree<GameStateTree> (Plays another turn)
+        else win = this.playTurn(newTreeNode);
 
         if (win) currentNode.getValue().addWin();
         else currentNode.getValue().addLoss();
