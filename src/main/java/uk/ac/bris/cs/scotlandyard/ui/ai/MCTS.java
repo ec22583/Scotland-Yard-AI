@@ -64,7 +64,7 @@ public class MCTS extends Thread {
         return moves;
     }
 
-//  Recursively moves down the tree until a node without all the possible child states is reached.
+//  Recursively moves down the tree until a node without all the possible child states is reached. (Selection Stage)
 //  Then, playTurn will be called and the game will be simulated to the end.
     private EndState traverseTree (Tree<TreeGameState> currentNode) {
         List<Move> availableMoves = new ArrayList<>(currentNode.getValue().getGameState().getAvailableMoves());
@@ -74,7 +74,7 @@ public class MCTS extends Thread {
 
 //      All moves that can be carried out have already been added to the tree.
         if (childNodes.size() == availableMoves.size()) {
-//          Win state reached already so path not counted.
+//          Path fully added to tree reached the end of the game. Don't count
             if (availableMoves.size() == 0) {
                 return EndState.NONE;
             }
@@ -102,13 +102,14 @@ public class MCTS extends Thread {
             List<Move> filteredAvailableMoves = removeMovesContaining(availableMoves, currentNode.getChildValues());
             Move nextMove = filteredAvailableMoves.get(new Random().nextInt(filteredAvailableMoves.size()));
 
-//          Play randomly selected move and create new Tree node for game state.
+//          Play randomly selected move and create new Tree node for game state. (Expansion Stage)
             Board.GameState nextState = currentState.advance(nextMove);
             nextChild = currentNode.addChildValue(new TreeGameState(nextState, nextMove));
 
             win = this.playTurn(nextState);
         }
 
+        // (Backpropogation stage)
         if (win.equals(EndState.WIN)) nextChild.getValue().addWin();
         else if (win.equals(EndState.LOSS)) nextChild.getValue().addLoss();
 
@@ -117,6 +118,7 @@ public class MCTS extends Thread {
 
 //  Recursively plays a turn (from available moves from currentNode's game state) and updates the tree.
 //  Once game is finished, adds the win or loss statistics up the tree recursively.
+//  (Simulation/Playout Stage)
     private EndState playTurn (Board.GameState currentState){
 //      If there is a winner, then end recursion and pass win boolean up recursion stack.
         if (!currentState.getWinner().isEmpty()) {
