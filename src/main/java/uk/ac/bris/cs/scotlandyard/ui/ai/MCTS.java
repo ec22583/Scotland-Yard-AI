@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -33,12 +34,12 @@ public class MCTS extends Thread {
 //  Recursively plays a turn (from available moves from currentNode's game state) and updates the tree.
 //  Once game is finished, adds the win or loss statistics up the tree recursively.
     private boolean playTurn (Tree<TreeGameState> currentNode){
-        List<Move> availableMoves = currentNode.getValue().getGameState().getAvailableMoves().asList();
-        List<TreeGameState> childValues = currentNode.getChildValues();
+        List<Move> availableMoves = new ArrayList<>(currentNode.getValue().getGameState().getAvailableMoves());
+        List<TreeGameState> childValues = new ArrayList<>(currentNode.getChildValues());
 
         Move nextMove = null;
 //      Not all moves from this game state have been searched yet.
-        if (currentNode.getChildNodes().size() < availableMoves.size()) {
+        if (childValues.size() < availableMoves.size()) {
 //          Filters out all moves that have already been visited.
             availableMoves.removeAll(
                     childValues
@@ -46,17 +47,17 @@ public class MCTS extends Thread {
                             .map(t -> t.getPreviousMove())
                             .toList()
             );
+            nextMove = availableMoves.get(new Random().nextInt(availableMoves.size()));
         }
 //      All moves have been visited at least once, so we can use the UCT selection strategy.
         else {
-            Move bestMove = childValues.get(0).getPreviousMove();
-            Board.GameState bestGameState = childValues.get(0).getGameState();
             double bestScore = MCTS.calculateUCB1(
                     0.8,
                     currentNode.getValue().getTotalPlays(),
                     childValues.get(0).getTotalPlays(),
                     childValues.get(0).getWins()
             );
+            nextMove = childValues.get(0).getPreviousMove();
             childValues.remove(0);
             for (TreeGameState childValue : childValues) {
                 double currentChildScore = MCTS.calculateUCB1(
@@ -65,14 +66,15 @@ public class MCTS extends Thread {
                         childValue.getTotalPlays(),
                         childValue.getWins()
                 );
-//                if (c)
+                if (currentChildScore > bestScore) {
+                    bestScore = currentChildScore;
+                    nextMove = childValue.getPreviousMove();
+                }
             }
         }
 
-        Move randomMove = availableMoves.get(new Random().nextInt(availableMoves.size()));
-
-        Board.GameState newGameState = currentNode.getValue().getGameState().advance(randomMove);
-        TreeGameState newTreeGameState = new TreeGameState(newGameState, randomMove);
+        Board.GameState newGameState = currentNode.getValue().getGameState().advance(nextMove);
+        TreeGameState newTreeGameState = new TreeGameState(newGameState, nextMove);
         Optional<Tree<TreeGameState>> optionalChild =
                 this.gameStateTree.getChildNodeEqualling(newTreeGameState);
 

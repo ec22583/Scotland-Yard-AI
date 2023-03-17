@@ -57,8 +57,12 @@ public class MrXAI {
         double averageScore = this.getAverageScore(nextTreeGameStates.get(0));
         Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
 
+//        System.out.println(String.format("Number of child nodes: %s, number of available moves %s", gameStateTree.getChildNodes().size(), board.getAvailableMoves().size()));
+
+//        System.out.println(String.format("Total plays %s", gameStateTree.getValue().getTotalPlays()));
         for (TreeGameState treeGameState : nextTreeGameStates) {
             double newTreeGameStateAvgScore = this.getAverageScore(treeGameState);
+            System.out.println(String.format("Score: %s, Wins: %s, Plays: %s", newTreeGameStateAvgScore, treeGameState.getWins(), treeGameState.getTotalPlays()));
 
             if (newTreeGameStateAvgScore > averageScore) {
                 averageScore = newTreeGameStateAvgScore;
