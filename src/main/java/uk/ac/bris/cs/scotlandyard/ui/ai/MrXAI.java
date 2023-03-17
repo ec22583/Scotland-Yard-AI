@@ -29,6 +29,16 @@ public class MrXAI {
                 / Double.valueOf(treeGameState.getTotalPlays());
     }
 
+    //Helper function of generateBestMove
+    public void sleepThread(Pair<Long, TimeUnit> timeoutPair){
+        try {
+//          Sleeps the program for the (time - 500 ms).
+            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 500);
+        } catch (InterruptedException e) { // Handles if an interrupt is thrown towards the current method while asleep.
+            Thread.currentThread().interrupt();
+        }
+
+    }
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
         this.gameSetup = board.getSetup();
@@ -38,15 +48,7 @@ public class MrXAI {
         MCTS mcts = new MCTS(gameStateTree);
 //      Starts thread that runs the Monte Carlo Tree Search.
         mcts.start();
-
-        try {
-//          Sleeps the program for the time - 500 milliseconds.
-            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 500);
-        } catch (InterruptedException e) { // Handles if an interrupt is thrown towards the current method while asleep.
-            Thread.currentThread().interrupt();
-            return null;
-        }
-
+        this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run
         mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
 
         List<TreeGameState> nextTreeGameStates = gameStateTree.getChildValues();
