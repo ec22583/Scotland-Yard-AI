@@ -46,7 +46,7 @@ public class MrXAI {
         this.gameState = this.generateGameState(board);
         this.gameStateTree = new Tree<>(new TreeGameState(gameState));
 
-        MCTS mcts = new MCTS(gameStateTree);
+        MCTS mcts = new MCTS(gameStateTree, 0.2);
 //      Starts thread that runs the Monte Carlo Tree Search.
         mcts.start();
         this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run

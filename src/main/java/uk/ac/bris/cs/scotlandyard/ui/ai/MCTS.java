@@ -13,9 +13,11 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 // MCTS Algorithm (Monte Carlo tree search)
 public class MCTS extends Thread {
     private Tree<TreeGameState> gameStateTree;
+    private final double EXPLORATION_FACTOR;
 
-    public MCTS (Tree<TreeGameState> tree) {
+    public MCTS (Tree<TreeGameState> tree, double explorationFactor) {
         this.gameStateTree = tree;
+        this.EXPLORATION_FACTOR = explorationFactor;
 
     }
     /**
@@ -31,13 +33,12 @@ public class MCTS extends Thread {
     }
 
     //Helper to calculateUCB1. Used to process parent and child into appropriate values and types
-    static double processForUCB1 (Tree<TreeGameState> parent ,TreeGameState child){
-        final double EXPLORATION_FACTOR = 0.2;
+    static double processForUCB1 (double explorationFactor, Tree<TreeGameState> parent ,TreeGameState child){
         double np = parent.getValue().getTotalPlays();
         double ni = child.getTotalPlays();
         double wi = child.getWins();
 
-        return calculateUCB1(EXPLORATION_FACTOR, np, ni, wi);
+        return calculateUCB1(explorationFactor, np, ni, wi);
     }
 
     //Helper function to playTurn
@@ -73,12 +74,12 @@ public class MCTS extends Thread {
 //      All moves have been visited at least once, so we can use the UCT selection strategy.
         else {
             //Assume the first child is the best
-            double bestScore = MCTS.processForUCB1(currentNode, childValues.get(0));
+            double bestScore = MCTS.processForUCB1(this.EXPLORATION_FACTOR ,currentNode, childValues.get(0));
             nextMove = childValues.get(0).getPreviousMove();
             childValues.remove(0);
 
             for (TreeGameState childValue : childValues) {
-                double currentChildScore = MCTS.processForUCB1(currentNode, childValue);
+                double currentChildScore = MCTS.processForUCB1(this.EXPLORATION_FACTOR, currentNode, childValue);
                 if (currentChildScore > bestScore) {
                     bestScore = currentChildScore;
                     nextMove = childValue.getPreviousMove();
