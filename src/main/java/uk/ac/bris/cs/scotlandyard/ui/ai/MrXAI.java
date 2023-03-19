@@ -5,9 +5,11 @@ import com.google.common.collect.ImmutableMap;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
+import java.awt.*;
 import java.sql.Time;
 import java.util.*;
 import java.lang.Thread;
+import java.util.List;
 import java.util.concurrent.*;
 
 import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
@@ -16,7 +18,7 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 public class MrXAI {
     private MyGameStateFactory myGameStateFactory;
     private GameSetup gameSetup;
-    Tree<TreeGameState> gameStateTree;
+    Node mctsTree;
     Board.GameState gameState;
 
     public MrXAI () {
@@ -38,40 +40,22 @@ public class MrXAI {
             // Handles if an interrupt is thrown towards the current method while asleep.
             Thread.currentThread().interrupt();
         }
-
     }
+
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
         this.gameSetup = board.getSetup();
         this.gameState = this.generateGameState(board);
-        this.gameStateTree = new Tree<>(new TreeGameState(gameState));
 
-        MCTS mcts = new MCTS(gameStateTree, 0.2);
+        this.mctsTree = new Node(gameState);
+        MCTS mcts = new MCTS(mctsTree);
+
 //      Starts thread that runs the Monte Carlo Tree Search.
         mcts.start();
         this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run
         mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
 
-        List<TreeGameState> nextTreeGameStates = new ArrayList<>(gameStateTree.getChildValues());
-
-//      Assume first child is best. Calculates the average score of the path.
-        double averageScore = this.getAverageScore(nextTreeGameStates.get(0));
-        Move bestMove = nextTreeGameStates.get(0).getPreviousMove();
-        int childPlays = nextTreeGameStates.get(0).getTotalPlays();
-        nextTreeGameStates.remove(0);
-        for (TreeGameState treeGameState : nextTreeGameStates) {
-            double newTreeGameStateAvgScore = this.getAverageScore(treeGameState);
-            System.out.println(String.format("Score: %s, Wins: %s, Plays: %s", newTreeGameStateAvgScore, treeGameState.getWins(), treeGameState.getTotalPlays()));
-            childPlays += treeGameState.getTotalPlays();
-
-            if (newTreeGameStateAvgScore > averageScore) {
-                averageScore = newTreeGameStateAvgScore;
-                bestMove = treeGameState.getPreviousMove();
-            }
-        }
-
-        System.out.println(String.format("Total plays for turn: %s, Sum of child plays: %s", gameStateTree.getValue().getTotalPlays(), childPlays));
-        return bestMove;
+        return this.mctsTree.getBestChild().getPreviousMove();
     }
 
     //Helper method
