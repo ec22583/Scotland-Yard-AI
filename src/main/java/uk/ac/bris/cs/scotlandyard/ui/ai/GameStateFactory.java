@@ -104,8 +104,8 @@ public class GameStateFactory {
 
         for (int oldPossibleLocation : oldPossibleLocations) {
             Set<EndpointPair<Integer>> edges = graph.edges();
-            Set<EndpointPair<Integer>> possibleEdges =
-                    ImmutableSet.copyOf(edges
+
+            Set<Integer> possibleLocations = ImmutableSet.copyOf(edges
                     .stream()
                     .filter(edge -> {
                         Optional<ImmutableSet<ScotlandYard.Transport>> optionalTransports = graph.edgeValue(edge);
@@ -119,16 +119,13 @@ public class GameStateFactory {
 
                         return tickets.contains(usedTicket);
                     })
-
-                    .toList());
-
-            Set<Integer> possibleLocations = ImmutableSet.copyOf(possibleEdges
-                    .stream()
                     .map(edge -> edge.adjacentNode(oldPossibleLocation))
                     .filter(l -> !detectiveLocations.contains(l))
-                    .toList());
+                    .toList()
+            );
 
             newLocations.addAll(possibleLocations);
+
         }
         return newLocations;
     }
