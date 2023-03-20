@@ -92,9 +92,8 @@ public class GameStateFactory {
         return gameState;
     }
 
-
-
     // Algorithm for possible new locations of MrX after his last definite location
+    // Helper function for generateDetectiveGameStates
     public List<Integer> generatePossibleNewLocations (
             ScotlandYard.Ticket usedTicket,
             List<Integer> detectiveLocations,
@@ -117,15 +116,14 @@ public class GameStateFactory {
                                         .map(t -> t.requiredTicket())
                                         .toList());
 
-                        return tickets.contains(usedTicket);
+                        return tickets.contains(usedTicket); //turns all tickets of a specific type
                     })
-                    .map(edge -> edge.adjacentNode(oldPossibleLocation))
+                    .map(edge -> edge.adjacentNode(oldPossibleLocation))// Adjacent node from old possible locations
+                    //Prune all possible locations that detectives are in
                     .filter(l -> !detectiveLocations.contains(l))
                     .toList()
             );
-
             newLocations.addAll(possibleLocations);
-
         }
         return newLocations;
     }

@@ -27,9 +27,8 @@ public class MCTS extends Thread {
 
             // Simulation Stage
             gameValue = node.simulateGame();
-        } else {
-            gameValue = Node.getGameValue(node.getGameState());
         }
+        else gameValue = Node.getGameValue(node.getGameState());
 
         // Backpropagation Stage
         node.backpropagation(gameValue);
