@@ -7,6 +7,7 @@ import uk.ac.bris.cs.scotlandyard.model.Piece;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,8 +21,10 @@ public class Node {
     private double totalValue;
     private ConcurrentHashMap<Integer, Node> children;
     private Node parent = null;
+    private Node root;
     private final double EXPLORATION_VALUE = 0.8;
 
+//  Used to record who has won the game.
     public enum GameValue {
         MRXWIN,
         MRXLOSS,
@@ -38,6 +41,7 @@ public class Node {
     public Node (Board.GameState gameState) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
+        this.root = this;
 
         this.remainingMoves = new ArrayList<>(gameState
                 .getAvailableMoves()
@@ -52,19 +56,27 @@ public class Node {
     }
 
 //  Constructor for child nodes.
-    public Node (Board.GameState gameState, Node parent, Move previousMove) {
+    public Node (Board.GameState gameState, Node root, Node parent, Move previousMove) {
         this.gameState = gameState;
+        this.root = root;
+        this.parent = parent;
+        this.previousMove = previousMove;
+        this.children = new ConcurrentHashMap<>();
 
 //      Win state reached (Can't expand anymore)
         if (!gameState.getWinner().isEmpty()) this.piece = parent.piece;
         else this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
 
-        this.remainingMoves = new ArrayList<>(gameState.getAvailableMoves().asList());
+        this.remainingMoves = new ArrayList<>(gameState
+                .getAvailableMoves()
+                .asList()
+                .stream()
+                .filter(m -> m.commencedBy().equals(this.piece))
+                .toList());
+
+
         this.totalValue = 0;
         this.totalPlays = 0;
-        this.children = new ConcurrentHashMap<>();
-        this.parent = parent;
-        this.previousMove = previousMove;
     }
 
     public Board.GameState getGameState () {
@@ -119,18 +131,24 @@ public class Node {
 
     // Expansion stage of MCTS
     public Node expandNode () {
+        if (remainingMoves.size() == 0) throw new IllegalStateException("Cannot call expandNode on fully expanded node.");
+
         Move nextMove = remainingMoves.get(new Random().nextInt(remainingMoves.size()));
         remainingMoves.remove(nextMove);
 
         Board.GameState newGameState = this.gameState.advance(nextMove);
-//        System.out.println("New node expanded.");
-        Node newNode = new Node(newGameState, this, nextMove);
+        Node newNode = new Node(newGameState, this.root, this, nextMove);
         this.children.put(newGameState.hashCode(), newNode);
+
         return newNode;
     }
 
     //Helper function
     private double calculateUCB (Node childNode) {
+        if (childNode == null) throw new IllegalArgumentException("Child node not defined.");
+        if (!this.children.containsKey(childNode.getGameState().hashCode()))
+            throw new IllegalArgumentException("Node not child of current node.");
+
         double avgScore = childNode.getTotalValue() / childNode.getTotalPlays();
         if (childNode.getTotalPlays() == 0) {
             avgScore = 0;
@@ -152,6 +170,8 @@ public class Node {
 
     // select child based on best UCB score
     public Node selectChild () {
+        if (this.children.size() == 0) throw new IllegalStateException("Cannot select child as no children exist");
+
         double bestScore = Double.NEGATIVE_INFINITY;
 //      This is safe since it will always be overwritten in the for loop.
         Node bestChild = null;
@@ -165,6 +185,18 @@ public class Node {
         }
 
         return bestChild;
+    }
+
+    public Optional<Piece> getGameWinner (Board.GameState gameState) {
+        if (gameState.getWinner().isEmpty()) return Optional.empty();
+
+        if (gameState.getWinner().asList().get(0).isMrX()) {
+            return Optional.of(Piece.MrX.MRX);
+        }
+//      Assumes that the winner was the last person to move by default.
+        else {
+            return Optional.of(this.parent.piece);
+        }
     }
 
     public boolean isGameOver () {
@@ -200,6 +232,24 @@ public class Node {
 
         // if (childNode.getPiece().isMrX() || this.getPiece().isMrX()) {
         return this.getGameValue(currentGameState);
+    }
+
+//  Adds a win made by the current turn's detective to the node.
+    private void addSelfWin () {
+        this.totalPlays += 1;
+        this.totalValue += 1;
+    }
+
+//  Used if a different detective to the current turn's detective made the win.
+    private void addOtherWin () {
+        this.totalPlays += 1;
+        this.totalValue += 1;
+    }
+
+//  Used if the
+    private void addLoss () {
+        this.totalPlays += 1;
+        this.totalValue += 0;
     }
 
     // Backpropagation stage
