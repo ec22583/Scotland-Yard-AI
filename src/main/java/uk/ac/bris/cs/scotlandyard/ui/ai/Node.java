@@ -38,7 +38,10 @@ public class Node {
         }
     }
 
-    //  Constructor for if node is root node.
+    /**
+     * Constructor for the root node
+     * @param gameState Current game state
+     * */
     public Node (Board.GameState gameState) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
@@ -56,9 +59,9 @@ public class Node {
         this.children = new ConcurrentHashMap<>();
     }
 
-//  Constructor for child nodes.
+
     /**
-     *
+     * Constructor for non-root nodes
      * @param gameState Current game state
      * @param root root of the data structure (tree)
      * @param parent parent of this node
@@ -134,7 +137,11 @@ public class Node {
         return this.remainingMoves.size() == 0 && this.children.size() > 0;
     }
 
-    // Expansion stage of MCTS
+    /**
+     * Expansion stage of MCTS algorithm. Selects a random node from remaining moves.
+     * @return a new Node to add to the data structure (tree)
+     * @throws IllegalStateException if this function tries to expand on a fully expanded node
+     * */
     public Node expandNode () {
         if (remainingMoves.size() == 0) throw new IllegalStateException("Cannot call expandNode on fully expanded node.");
 
@@ -149,6 +156,11 @@ public class Node {
     }
 
     //Helper function
+    /**
+     *
+     * @param childNode childNode to evaluate UCB on
+     * @return evaluation of the UCB1 equation of the child node
+     * */
     private double calculateUCB (Node childNode) {
         if (childNode == null) throw new IllegalArgumentException("Child node not defined.");
         if (!this.children.containsKey(childNode.getGameState().hashCode()))
