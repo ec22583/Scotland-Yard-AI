@@ -13,31 +13,32 @@ import java.util.concurrent.ConcurrentHashMap;
 
 // Our own node data structure
 public class Node {
-    private Board.GameState gameState;
+    final private Board.GameState gameState;
     private Move previousMove = null;
-    private Piece piece; //Either MrX or a Detective
+    final private Piece piece; //Either MrX or a Detective
     private List<Move> remainingMoves; //Pre-filtered
     private double totalPlays;
     private double totalValue;
     private ConcurrentHashMap<Integer, Node> children;
     private Node parent = null;
-    private Node root;
-    private final double EXPLORATION_VALUE = 0.8;
+    final private Node root;
+    final private double EXPLORATION_VALUE = 0.8;
 
 //  Used to record who has won the game.
+
     public enum GameValue {
-        MRXWIN,
         MRXLOSS,
+        MRXWIN,
         NONE;
 
-        public int getNum () {
+        public int getNum() {
             if (this.equals(MRXWIN)) return 1;
             else if (this.equals(MRXLOSS)) return 0;
             else return 0;
         }
     }
 
-//  Constructor for if node is root node.
+    //  Constructor for if node is root node.
     public Node (Board.GameState gameState) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
@@ -56,6 +57,13 @@ public class Node {
     }
 
 //  Constructor for child nodes.
+    /**
+     *
+     * @param gameState Current game state
+     * @param root root of the data structure (tree)
+     * @param parent parent of this node
+     * @param previousMove move that would traverse from the parent node to this node
+     * */
     public Node (Board.GameState gameState, Node root, Node parent, Move previousMove) {
         this.gameState = gameState;
         this.root = root;
@@ -74,15 +82,12 @@ public class Node {
                 .filter(m -> m.commencedBy().equals(this.piece))
                 .toList());
 
-
         this.totalValue = 0;
         this.totalPlays = 0;
     }
 
     public Board.GameState getGameState () {
-
         return this.gameState;
-
     }
 
     public Piece getPiece () {

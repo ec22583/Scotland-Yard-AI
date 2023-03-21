@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
+import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
 import javax.annotation.Nonnull;
@@ -13,24 +14,6 @@ import java.util.*;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
 public class GameStateFactory {
-    //Helper method
-    static private ImmutableMap<ScotlandYard.Ticket, Integer> getTicketsForPlayer (Board board, Piece piece) {
-//      Get a TicketBoard of tickets
-        Optional<Board.TicketBoard> ticketsOptional = board.getPlayerTickets(piece);
-        if (ticketsOptional.isEmpty()) throw new IllegalArgumentException("Player does not exist.");
-        Board.TicketBoard tickets = ticketsOptional.get();
-
-        //      Generates map of ticket values from current TicketBoard state.
-        Map<ScotlandYard.Ticket, Integer> ticketMap = new HashMap<>();
-
-        //Go over through all ticket types
-        for (ScotlandYard.Ticket ticketType : ScotlandYard.Ticket.values()) {
-            ticketMap.put(ticketType, tickets.getCount(ticketType));
-        }
-
-        return ImmutableMap.copyOf(ticketMap);
-    }
-
     //Helper function
     static private ImmutableList<Player> getDetectives (Board board){
 
@@ -46,7 +29,7 @@ public class GameStateFactory {
                     return new Player(
                                     piece,
                                     // Generates tickets for piece.
-                                    GameStateFactory.getTicketsForPlayer(board, piece),
+                                    BoardHelpers.getTicketsForPlayer(board, piece),
                                     //  Piece must be cast to a Detective. Not an issue since mrx filtered out earlier
                                     // (For type safety). .get() fine as piece always is a detective.
                                     locationOptional.get()
@@ -62,17 +45,7 @@ public class GameStateFactory {
         if (board.getAvailableMoves().isEmpty())
             throw new IllegalArgumentException("Board already winning board.");
 
-        List<Boolean> moveSetup = new LinkedList<>();
-
-//      Ensures that MrX is always visible to AI. (Himself)
-        for (int i = 0; i < (board.getSetup().moves.size() - board.getMrXTravelLog().size()); i++) {
-            moveSetup.add(true);
-        }
-
-        GameSetup gameSetup = new GameSetup(
-                board.getSetup().graph,
-                ImmutableList.copyOf(moveSetup)
-        );
+        GameSetup gameSetup = BoardHelpers.generateGameSetup(board);
 
         int location = board
                 .getAvailableMoves()
@@ -81,7 +54,7 @@ public class GameStateFactory {
                 .source();
 
 
-        Player mrX = new Player(MRX, GameStateFactory.getTicketsForPlayer(board, MRX) , location);
+        Player mrX = new Player(MRX, BoardHelpers.getTicketsForPlayer(board, MRX) , location);
         ImmutableList<Player> detectives = GameStateFactory.getDetectives(board);
 
         MyGameStateFactory myGameStateFactory = new MyGameStateFactory();
@@ -92,71 +65,121 @@ public class GameStateFactory {
         return gameState;
     }
 
-    // Algorithm for possible new locations of MrX after his last definite location
-    // Helper function for generateDetectiveGameStates
-    public List<Integer> generatePossibleNewLocations (
-            ScotlandYard.Ticket usedTicket,
-            List<Integer> detectiveLocations,
-            List<Integer> oldPossibleLocations,
-            ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph) {
-        List<Integer> newLocations = new LinkedList<>();
+    /**
+     * Create a player with an added ticket move to a different location
+     * Add the move to a list so we can move the game states
+     * @param board Current game state
+     * @param piece Piece being inspected
+     * @param currentLocation current location
+     * @return The adjusted player and the move to return the player to the original position
+     * @throws IllegalStateException If a node has no edges
+     * @throws IllegalStateException If the transport for edge cannot be found
+     * */
+    private static Pair<Player, Move> getRevisedPlayer (Board board, Piece piece, int currentLocation) {
+        ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph = board.getSetup().graph;
 
-        for (int oldPossibleLocation : oldPossibleLocations) {
-            Set<EndpointPair<Integer>> edges = graph.edges();
+        Set<EndpointPair<Integer>> adjacentEdges = graph.incidentEdges(currentLocation);
+        Optional<EndpointPair<Integer>> optionalEdge = adjacentEdges.stream().findAny();
+        if (optionalEdge.isEmpty()) throw new IllegalStateException("Node has no edges");
+        EndpointPair<Integer> edge = optionalEdge.get();
 
-            Set<Integer> possibleLocations = ImmutableSet.copyOf(edges
-                    .stream()
-                    .filter(edge -> {
-                        Optional<ImmutableSet<ScotlandYard.Transport>> optionalTransports = graph.edgeValue(edge);
-                        if (optionalTransports.isEmpty()) throw new IllegalStateException("Edge does not exist");
-                        ImmutableSet<ScotlandYard.Transport> transports = optionalTransports.get();
-                        ImmutableSet<ScotlandYard.Ticket> tickets =
-                                ImmutableSet.copyOf(transports
-                                        .stream()
-                                        .map(t -> t.requiredTicket())
-                                        .toList());
+        int destination = edge.adjacentNode(currentLocation);
+        Optional<ImmutableSet<ScotlandYard.Transport>> optionalTransports = graph.edgeValue(edge);
+        if (optionalTransports.isEmpty()) throw new IllegalStateException("Cannot find transports for edge");
 
-                        return tickets.contains(usedTicket); //turns all tickets of a specific type
-                    })
-                    .map(edge -> edge.adjacentNode(oldPossibleLocation))// Adjacent node from old possible locations
-                    //Prune all possible locations that detectives are in
-                    .filter(l -> !detectiveLocations.contains(l))
-                    .toList()
-            );
-            newLocations.addAll(possibleLocations);
-        }
-        return newLocations;
-    }
-
-    //Return locations of detectives from a list of detectives
-    public List<Integer> getDetectiveLocations (List<Player> detectives){
-        List<Integer> locations = detectives
+        //Filter out any secret tickets
+        List<ScotlandYard.Transport> filteredTransports = optionalTransports
+                .get()
                 .stream()
-                .map(d -> d.location())
+                .filter(t -> !t.requiredTicket().equals(ScotlandYard.Ticket.SECRET))
                 .toList();
 
-        return locations;
+        //Get the required ticket from the first transportation type in the list
+        ScotlandYard.Ticket ticket = filteredTransports.get(0).requiredTicket();
+
+        Player player = new Player(
+                piece,
+                BoardHelpers.getTicketsForPlayer(board, piece),
+                destination
+        );
+
+        player = player.give(ticket);
+
+        Move move = new Move.SingleMove(piece, destination, ticket, currentLocation);
+
+        return new Pair<Player, Move>(player, move);
     }
 
-    public List<Board.GameState> generateDetectiveGameStates (Board board, List<Integer> possibleLocations){
-
+    /**
+     * Generates predicated game states of MrX from detectives' perspective.
+     * @param board Current Game State
+     * @param possibleLocations Current Possible Positions for Mr X.
+     * @return List of possible game states from detectives' perspectives.
+     */
+    public List<Board.GameState> generateDetectiveGameStates (Board board, PossibleLocations possibleLocations){
         //Setup variables
-        List<Integer> detectiveLocations = this.getDetectiveLocations(this.getDetectives(board));
+        MyGameStateFactory myGameStateFactory = new MyGameStateFactory();
+        List<Board.GameState> possibleGameStates = new ArrayList<>(possibleLocations.getLocations().size());
 
-//    TODO LIST
-//        1. Get last known location of mrX (could be (start locations - detective starts) or last reveal log entry).
-//        - Must store the start positions of the detectives at the start of the game.
-//        Use an algorithm to deduce the possible locations of MrX from possible locations of last turn (see paper).
-//              may also be best to just copy paste the getAvailableMoves code from the other part.
+        //List of pieces whose turns have already passed
+        List<Piece> pieceTurnsPassed = new LinkedList<>();
+        pieceTurnsPassed.addAll(board.getPlayers());
 
-//        Store all possible locations for last turn.
-//        Find the detective locations for the current turn.
-//        Check the ticket used by the hider.
-//        Use above data in the algorithm.
-//        Update list of possible locations with new possible locations.
-//        If MrX revealed, then update the list to the single known location
-        // Repeat algorithm until next definite location.
+        List<Piece> piecesRemaining = new LinkedList<>();
 
-        return null; //To do when we implement the Detectives AI
+        List<Player> detectivePlayers = new LinkedList<>();
+        List<Move> moves = new LinkedList<>();
+
+        //Checks across all moves to see which piece haven't yet moved
+        for (Move move : board.getAvailableMoves()) {
+            if (!piecesRemaining.contains(move.commencedBy())) {
+                piecesRemaining.add(move.commencedBy());
+            }
+        }
+        pieceTurnsPassed.removeAll(piecesRemaining);
+
+        //Extracts detective pieces
+        List<Piece.Detective > detectives = pieceTurnsPassed.stream()
+                .filter(p -> p.isDetective())
+                .map(p -> (Piece.Detective) p)
+                .toList();
+
+        //Create a player with an added ticket move to a different location
+        //Add the move to a list, so we can move game states
+        for (Piece.Detective detective : detectives) {
+            Optional<Integer> detectiveLocationOptional = board.getDetectiveLocation(detective);
+            if (detectiveLocationOptional.isEmpty())
+                throw new IllegalStateException("Cannot find location for detective");
+            int detectiveLocation = detectiveLocationOptional.get();
+
+            Pair<Player, Move> revisedPlayer =
+                    GameStateFactory.getRevisedPlayer(board, detective, detectiveLocation);
+            detectivePlayers.add(revisedPlayer.left());
+            moves.add(revisedPlayer.right());
+
+        }
+
+        // Generate possible game states from MrX from his possible moves deduced by detectives
+        for (int possibleLocation : possibleLocations.getLocations()) {
+            Pair<Player, Move> revisedMrX = GameStateFactory.getRevisedPlayer(board, MRX, possibleLocation);
+
+            List<Move> updatedMoves = moves;
+            updatedMoves.add(revisedMrX.right());
+            Player mrX = revisedMrX.left();
+
+            Board.GameState newGameState = myGameStateFactory.build(
+                    BoardHelpers.generateGameSetup(board),
+                    mrX,
+                    (ImmutableList<Player>) detectivePlayers
+            );
+
+            //Update the game state to advance with the move
+            for (Move move : moves) {
+                newGameState = newGameState.advance(move);
+            }
+            possibleGameStates.add(newGameState);
+        }
+
+        return possibleGameStates;
     }
 }
