@@ -128,11 +128,23 @@ public class GameStateFactory {
         return newLocations;
     }
 
+    //Return locations of detectives from a list of detectives
+    public List<Integer> getDetectiveLocations (List<Player> detectives){
+        List<Integer> locations = detectives
+                .stream()
+                .map(d -> d.location())
+                .toList();
+
+        return locations;
+    }
+
     public List<Board.GameState> generateDetectiveGameStates (Board board, List<Integer> possibleLocations){
 
+        //Setup variables
+        List<Integer> detectiveLocations = this.getDetectiveLocations(this.getDetectives(board));
 
 //    TODO LIST
-//        Get last known location of mrX (could be (start locations - detective starts) or last reveal log entry).
+//        1. Get last known location of mrX (could be (start locations - detective starts) or last reveal log entry).
 //        - Must store the start positions of the detectives at the start of the game.
 //        Use an algorithm to deduce the possible locations of MrX from possible locations of last turn (see paper).
 //              may also be best to just copy paste the getAvailableMoves code from the other part.
