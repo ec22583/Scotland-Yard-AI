@@ -102,9 +102,7 @@ public class GameStateFactory {
                 BoardHelpers.getTicketsForPlayer(board, piece),
                 destination
         );
-
         player = player.give(ticket);
-
         Move move = new Move.SingleMove(piece, destination, ticket, currentLocation);
 
         return new Pair<Player, Move>(player, move);
@@ -115,6 +113,7 @@ public class GameStateFactory {
      * @param board Current Game State
      * @param possibleLocations Current Possible Positions for Mr X.
      * @return List of possible game states from detectives' perspectives.
+     * @throws IllegalStateException When it takes a detective but can't find a location of the detective
      */
     public List<Board.GameState> generateDetectiveGameStates (Board board, PossibleLocations possibleLocations){
         //Setup variables
@@ -124,13 +123,11 @@ public class GameStateFactory {
         //List of pieces whose turns have already passed
         List<Piece> pieceTurnsPassed = new LinkedList<>();
         pieceTurnsPassed.addAll(board.getPlayers());
-
         List<Piece> piecesRemaining = new LinkedList<>();
-
         List<Player> detectivePlayers = new LinkedList<>();
         List<Move> moves = new LinkedList<>();
 
-        //Checks across all moves to see which piece haven't yet moved
+        //Checks across all moves to see which piece haven't yet moved and removes them from pieceTurnsPassed
         for (Move move : board.getAvailableMoves()) {
             if (!piecesRemaining.contains(move.commencedBy())) {
                 piecesRemaining.add(move.commencedBy());
@@ -138,13 +135,13 @@ public class GameStateFactory {
         }
         pieceTurnsPassed.removeAll(piecesRemaining);
 
-        //Extracts detective pieces
+        //Extracts detective pieces (that have already moved)
         List<Piece.Detective > detectives = pieceTurnsPassed.stream()
                 .filter(p -> p.isDetective())
                 .map(p -> (Piece.Detective) p)
                 .toList();
 
-        //Create a player with an added ticket move to a different location
+        //Create a detective with an added ticket move to a different location
         //Add the move to a list, so we can move game states
         for (Piece.Detective detective : detectives) {
             Optional<Integer> detectiveLocationOptional = board.getDetectiveLocation(detective);
