@@ -364,8 +364,57 @@ public class AIGameStateFactory {
             return ImmutableList.copyOf(newLog);
         }
 
-        //Helper function to advance method
         /**
+         * Helper function to generateNewRemaining
+         * */
+        private ImmutableSet<Piece> switchToDetectivesTurn (List<Player> updatedDetectives) {
+            ImmutableSet<Piece> newRemaining = ImmutableSet.copyOf(
+                    this.detectives
+                    .stream()
+                    .filter(d -> ( (MyGameState.makeSingleMoves(this.setup, updatedDetectives, d, d.location()).size()) > 0))
+                    .map(d -> d.piece())
+                    .filter(d -> {
+                        Optional<Player> optionalPlayer = getPlayerFromPiece(d);
+                        if (optionalPlayer.isEmpty()) throw new IllegalStateException("Detective not found");
+                        Player player = optionalPlayer.get();
+
+//						Check if player has tickets
+                        return player.tickets()
+                                .values()
+                                .stream()
+                                .mapToInt(Integer::intValue)
+                                .sum() != 0;
+                    })
+                    .toList());
+
+            return newRemaining;
+        }
+        /**
+         * Helper function to generateNewRemaining
+         * @param move used
+         * @param updatedDetectives list of updated detective states
+         * */
+        private ImmutableSet<Piece> removedMovedPlayerFromRemaining (Move move, List<Player> updatedDetectives){
+            ImmutableSet<Piece> newRemaining = ImmutableSet.copyOf(
+                    this.remaining
+                    .stream()
+                    .filter((piece) -> !piece.equals(move.commencedBy()))
+                    .filter(d -> {
+                        Optional<Player> optionalPlayer = this.getPlayerFromPiece(d);
+                        if (optionalPlayer.isEmpty()) throw new IllegalStateException("Cannot get detective player.");
+                        return !MyGameState.makeSingleMoves(
+                                this.setup,
+                                updatedDetectives,
+                                optionalPlayer.get(),
+                                optionalPlayer.get().location()).isEmpty();
+                    })
+                    .toList());
+
+            return newRemaining;
+        }
+
+        /**
+         * Helper function to advance method
          * Updates the set of remaining players (to move)
          * @param move Move used to advance
          * @param updatedDetectives List of updated detective states
@@ -375,47 +424,19 @@ public class AIGameStateFactory {
         private ImmutableSet<Piece> generateNewRemaining (Move move, List<Player> updatedDetectives) {
             ImmutableSet<Piece> newRemaining; // Sets the remaining set to the correct players.
 
-            if (move.commencedBy().isMrX()) { // Switches to detectives' turn.
-                newRemaining = ImmutableSet.copyOf(detectives
-                        .stream()
-                        .filter(d -> (MyGameState.makeSingleMoves(this.setup, updatedDetectives, d, d.location()).size() > 0))
-                        .map(d -> d.piece())
-                        .filter(d -> {
-                            Optional<Player> optionalPlayer = getPlayerFromPiece(d);
-                            if (optionalPlayer.isEmpty()) throw new IllegalStateException("Detective not found");
-                            Player player = optionalPlayer.get();
-
-//							Returns
-                            return player.tickets()
-                                    .values()
-                                    .stream()
-                                    .mapToInt(Integer::intValue)
-                                    .sum() != 0;
-                        })
-                        .toList());
+            if (move.commencedBy().isMrX()) {
+                newRemaining = switchToDetectivesTurn(updatedDetectives);
             }
             else {
 //				Changes to mrX's turn when detective's turns run out and not his turn.
-                if (this.remaining.size() <= 1) {
-                    newRemaining = ImmutableSet.of(mrX.piece());
-
-                }
-                else { // Removes player who moved from remaining players
-                    newRemaining = ImmutableSet.copyOf(remaining
-                            .stream()
-                            .filter(r -> !r.equals(move.commencedBy()))
-                            .filter(d -> {
-                                Optional<Player> optionalPlayer = this.getPlayerFromPiece(d);
-                                if (optionalPlayer.isEmpty()) throw new IllegalStateException("Cannot get detective player.");
-                                return !MyGameState.makeSingleMoves(this.setup, updatedDetectives, optionalPlayer.get(), optionalPlayer.get().location()).isEmpty();
-                            })
-                            .toList());
+                if (this.remaining.size() <= 1) newRemaining = ImmutableSet.of(mrX.piece());
+                else {
+                    newRemaining = removedMovedPlayerFromRemaining(move, updatedDetectives);
 
                     // if there are no remaining players then it's Mr X's turn
                     if (newRemaining.isEmpty()) newRemaining = ImmutableSet.of(Piece.MrX.MRX);
                 }
             }
-
             return newRemaining;
         }
 

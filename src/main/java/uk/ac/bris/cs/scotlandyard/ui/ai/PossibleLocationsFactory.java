@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
+import jakarta.websocket.Endpoint;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.LogEntry;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
@@ -24,9 +25,42 @@ public class PossibleLocationsFactory {
             this.turn = turn;
         }
 
-        // Algorithm for possible new locations of MrX after his last definite location
-        // Helper function for generateDetectiveGameStates
+        /**
+         * Helper function to generatePossibleNewLocations. Takes an edge of the graph and sees if it uses a
+         * specific given ticket type
+         * @param edge edge to be checked
+         * @param usedTicket ticket type to check against the edge
+         * @param graph graph of the game
+         * @return a predicate whether the edge uses that ticket type
+         * @throws IllegalStateException if the edge doesn't exist
+         * */
+        private boolean checkEdgeUsesTicket (EndpointPair<Integer> edge,
+                                                 ScotlandYard.Ticket usedTicket,
+                                                 ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph){
+            //Extract type of transport that is used to go to the edge
+            Optional<ImmutableSet<ScotlandYard.Transport>> optionalTransports = graph.edgeValue(edge);
+            if (optionalTransports.isEmpty()) throw new IllegalStateException("Edge does not exist");
 
+            ImmutableSet<ScotlandYard.Transport> transports = optionalTransports.get();
+            ImmutableSet<ScotlandYard.Ticket> tickets =
+                    ImmutableSet.copyOf(
+                            transports
+                            .stream()
+                            .map(t -> t.requiredTicket())
+                            .toList());
+
+            return tickets.contains(usedTicket); //returns true if edge contains ticket of specific type
+        }
+
+        /**
+         * Algorithm for possible new locations of MrX after his last definite location
+         * Helper function for generateDetectiveGameStates
+         * @param usedTicket ticket used by MrX
+         * @param detectiveLocations list of locations of the detectives
+         * @param oldPossibleLocations old possible locations of MrX calculated in previous turns
+         * @param graph Graph of the game
+         * @return updated list of possible locations of MrX
+         * */
         private List<Integer> generatePossibleNewLocations (
                 ScotlandYard.Ticket usedTicket,
                 List<Integer> detectiveLocations,
@@ -43,21 +77,11 @@ public class PossibleLocationsFactory {
                 else {
                     possibleLocations = ImmutableSet.copyOf(edges
                             .stream()
-                            .filter(edge -> {
-                                Optional<ImmutableSet<ScotlandYard.Transport>> optionalTransports = graph.edgeValue(edge);
-                                if (optionalTransports.isEmpty()) throw new IllegalStateException("Edge does not exist");
-                                ImmutableSet<ScotlandYard.Transport> transports = optionalTransports.get();
-                                ImmutableSet<ScotlandYard.Ticket> tickets =
-                                        ImmutableSet.copyOf(transports
-                                                .stream()
-                                                .map(t -> t.requiredTicket())
-                                                .toList());
-
-                                return tickets.contains(usedTicket); //turns all tickets of a specific type
-                            })
+                            .filter(edge -> checkEdgeUsesTicket(edge, usedTicket, graph))
                             .toList()
                     );
                 }
+
                 newLocations.addAll(possibleLocations
                         .stream()
                         // Adjacent node from old possible locations
@@ -112,14 +136,15 @@ public class PossibleLocationsFactory {
             return newPossibleLocations;
         }
 
-        public ImmutableList<Integer> getLocations () {
-            return ImmutableList.copyOf(this.locations);
-        }
-
         @Override @Nonnull
         public int getTurn(){
             return this.turn;
         }
+
+        public ImmutableList<Integer> getLocations () {
+            return ImmutableList.copyOf(this.locations);
+        }
+
     }
 
     /**

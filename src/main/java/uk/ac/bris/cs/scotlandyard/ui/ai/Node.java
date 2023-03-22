@@ -138,10 +138,6 @@ public class Node {
 
         for (Node child : this.children.values()) {
             double currentScore = child.getTotalValue()/child.getTotalPlays();
-//            System.out.println("Piece :" + child.getPiece());
-//            System.out.println("Children of the child" + child.getChildren());
-//            System.out.println("Total value: " + child.getTotalValue() + "Total plays: " + child.getTotalPlays());
-//            System.out.println(String.format("Score for %s: %s", child.getPreviousMove(), currentScore));
             if (currentScore > bestScore) {
                 System.out.println("Found child with higher score: " + child.getPreviousMove());
                 bestScore = currentScore;

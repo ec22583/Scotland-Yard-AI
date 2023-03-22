@@ -18,7 +18,7 @@ public interface PossibleLocations {
      * @return updated (expanded) game board
      * @throws IllegalArgumentException if board is more than a turn into the future.
      */
-    public PossibleLocations updateLocations (Board board);
+    PossibleLocations updateLocations (Board board);
 
     /**
      * When MrX surfaces on a revealing round, clear previous possible locations and add his definite location
@@ -27,9 +27,9 @@ public interface PossibleLocations {
      * @return List of length 1 of the possible locations
      * @throws IllegalArgumentException If attempting to set a new known location on a hidden move
      * */
-    public PossibleLocations newKnownLocation (Board board, int turn);
+    PossibleLocations newKnownLocation (Board board, int turn);
 
-    public List<Integer> getLocations ();
+    List<Integer> getLocations ();
 
     /**
      * Gets the current turn from the class.

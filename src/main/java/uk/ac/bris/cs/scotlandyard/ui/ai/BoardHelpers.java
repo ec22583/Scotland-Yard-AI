@@ -8,12 +8,13 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 @SuppressWarnings("ALL")
+//Series of Helper functions for the Board used in multiple class files
 public interface BoardHelpers {
 
     /**
      * Possible starting locations of all players.
      */
-    int[] START_LOCATIONS = {35, 45, 51, 71, 78, 104, 106, 127, 132, 166, 170, 172};
+    final int[] START_LOCATIONS = {35, 45, 51, 71, 78, 104, 106, 127, 132, 166, 170, 172};
 
     @Nonnull
     static ImmutableList<Player> getDetectives (Board board){
