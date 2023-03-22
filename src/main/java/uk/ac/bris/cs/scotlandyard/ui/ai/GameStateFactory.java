@@ -43,9 +43,11 @@ public class GameStateFactory {
         return gameState;
     }
 
+    //TODO: REFACTOR THIS INTO SMALLER HELPER FUNCTIONS (for increased readability)
+
     /**
      * Create a player with an added ticket move to a different location
-     * Add the move to a list so we can move the game states
+     * Add the move to a list so that we can move the game states
      * @param board Current game state
      * @param piece Piece being inspected
      * @param currentLocation current location
@@ -116,6 +118,9 @@ public class GameStateFactory {
         return new Pair<Player, Move>(player, move);
     }
 
+
+    //TODO: REFACTOR THIS INTO SMALLER HELPER FUNCTIONS (for increased readability)
+
     /**
      * Generates predicated game states of MrX from detectives' perspective.
      * @param board Current Game State
@@ -130,8 +135,7 @@ public class GameStateFactory {
 
         //List of pieces whose turns have already passed
         List<Piece> pieceTurnsPassed = new LinkedList<>();
-        pieceTurnsPassed.addAll(board
-                .getPlayers());
+        pieceTurnsPassed.addAll(board.getPlayers());
         List<Piece> piecesRemaining = new LinkedList<>();
         List<Move> moves = new LinkedList<>();
 
