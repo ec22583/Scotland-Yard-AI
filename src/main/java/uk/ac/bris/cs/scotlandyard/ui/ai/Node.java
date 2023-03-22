@@ -13,19 +13,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 // Our own node data structure
 public class Node {
-    final private Board.GameState gameState;
+    private Board.GameState gameState;
     private Move previousMove = null;
-    final private Piece piece; //Either MrX or a Detective
+    private Piece piece; //Either MrX or a Detective
     private List<Move> remainingMoves; //Pre-filtered
     private double totalPlays;
     private double totalValue;
     private ConcurrentHashMap<Integer, Node> children;
     private Node parent = null;
-    final private Node root;
-    final private double EXPLORATION_VALUE = 0.8;
+    private Node root;
+    private final double EXPLORATION_VALUE = 0.8;
 
 //  Used to record who has won the game.
-
     public enum GameValue {
         MRX,
         BLUE,
@@ -48,10 +47,7 @@ public class Node {
         }
     }
 
-    /**
-     * Constructor for the root node
-     * @param gameState Current game state
-     * */
+//  Constructor for if node is root node.
     public Node (Board.GameState gameState) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
@@ -69,14 +65,7 @@ public class Node {
         this.children = new ConcurrentHashMap<>();
     }
 
-
-    /**
-     * Constructor for non-root nodes
-     * @param gameState Current game state
-     * @param root root of the data structure (tree)
-     * @param parent parent of this node
-     * @param previousMove move that would traverse from the parent node to this node
-     * */
+//  Constructor for child nodes.
     public Node (Board.GameState gameState, Node root, Node parent, Move previousMove) {
         this.gameState = gameState;
         this.root = root;
@@ -95,12 +84,15 @@ public class Node {
                 .filter(m -> m.commencedBy().equals(this.piece))
                 .toList());
 
+
         this.totalValue = 0;
         this.totalPlays = 0;
     }
 
     public Board.GameState getGameState () {
+
         return this.gameState;
+
     }
 
     public Piece getPiece () {
@@ -147,11 +139,7 @@ public class Node {
         return this.remainingMoves.size() == 0 && this.children.size() > 0;
     }
 
-    /**
-     * Expansion stage of MCTS algorithm. Selects a random node from remaining moves.
-     * @return a new Node to add to the data structure (tree)
-     * @throws IllegalStateException if this function tries to expand on a fully expanded node
-     * */
+    // Expansion stage of MCTS
     public Node expandNode () {
         if (remainingMoves.size() == 0) throw new IllegalStateException("Cannot call expandNode on fully expanded node.");
 
@@ -166,11 +154,6 @@ public class Node {
     }
 
     //Helper function
-    /**
-     *
-     * @param childNode childNode to evaluate UCB on
-     * @return evaluation of the UCB1 equation of the child node
-     * */
     private double calculateUCB (Node childNode) {
         if (childNode == null) throw new IllegalArgumentException("Child node not defined.");
         if (!this.children.containsKey(childNode.getGameState().hashCode()))
@@ -218,7 +201,7 @@ public class Node {
         return !this.getGameState().getWinner().isEmpty();
     }
 
-    static private GameValue getGameWinner (Board.GameState gameState) {
+    static public GameValue getGameWinner (Board.GameState gameState) {
         if (gameState.getWinner().isEmpty()) return GameValue.NONE;
         else if (gameState.getWinner().asList().get(0).isMrX()) return GameValue.MRX;
         else return GameValue.BLUE;
