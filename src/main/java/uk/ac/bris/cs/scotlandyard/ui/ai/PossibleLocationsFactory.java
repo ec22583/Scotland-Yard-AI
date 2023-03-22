@@ -73,7 +73,7 @@ public class PossibleLocationsFactory {
         public MyPossibleLocations updateLocations (Board board) {
 
             List<ScotlandYard.Ticket> mrXTickets = new ArrayList<>(2);
-            if (board.getMrXTravelLog().size() - this.turn + 1 > 2){
+            if (board.getMrXTravelLog().size() - this.turn > 2){
                 throw new IllegalArgumentException("Can't go further than a double move");
             }
 
@@ -95,7 +95,7 @@ public class PossibleLocationsFactory {
                 );
             }
 
-            return new MyPossibleLocations(newLocations , board.getMrXTravelLog().size() - 1);
+            return new MyPossibleLocations(newLocations , board.getMrXTravelLog().size());
         }
 
         @Override @Nonnull

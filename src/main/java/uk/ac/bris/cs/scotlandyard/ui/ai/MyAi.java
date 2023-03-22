@@ -14,9 +14,10 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 
 public class MyAi implements Ai {
 	private MrXAI mrXAI;
-//	private detectivesAi; //for later TODO
+	private DetectiveAI detectiveAI; //for later TODO
 	public void onStart() {
-		mrXAI = new MrXAI();
+		this.mrXAI = new MrXAI();
+		this.detectiveAI = new DetectiveAI();
 	}
 
 	@Nonnull @Override
@@ -38,9 +39,7 @@ public class MyAi implements Ai {
 		}
 //		Run detectives' turn
 		else {
-			// returns a random move, replace with your own implementation
-			var moves = board.getAvailableMoves().asList();
-			return moves.get(new Random().nextInt(moves.size()));
+			return detectiveAI.generateBestMove(board, timeoutPair);
 		}
 	}
 

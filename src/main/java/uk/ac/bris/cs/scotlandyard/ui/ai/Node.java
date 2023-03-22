@@ -124,16 +124,15 @@ public class Node {
     }
 
     public Node getBestChild () {
-
         // Post conditions will ensure score > -Infinity and bestChild will exist
         double bestScore = Double.NEGATIVE_INFINITY;
         Node bestChild = null;
 
         for (Node child : this.children.values()) {
-            double currentScore;
-                currentScore = child.getTotalValue()/child.getTotalPlays();
-                System.out.println(String.format("Score for %s: %s", child.getPreviousMove(), currentScore));
+            double currentScore = child.getTotalValue()/child.getTotalPlays();
+//            System.out.println(String.format("Score for %s: %s", child.getPreviousMove(), currentScore));
             if (currentScore > bestScore) {
+                System.out.println("Found child with higher score: " + child.getPreviousMove());
                 bestScore = currentScore;
                 bestChild = child;
             }
@@ -218,7 +217,7 @@ public class Node {
         return !this.getGameState().getWinner().isEmpty();
     }
 
-    static private GameValue getGameWinner (Board.GameState gameState) {
+    static public GameValue getGameWinner (Board.GameState gameState) {
         if (gameState.getWinner().isEmpty()) return GameValue.NONE;
         else if (gameState.getWinner().asList().get(0).isMrX()) return GameValue.MRX;
         else return GameValue.BLUE;
@@ -250,9 +249,9 @@ public class Node {
 
         if (value.equals(GameValue.MRX)) {
             if (this.root.piece.equals(GameValue.MRX)) return Optional.of(1.0);
-            else return Optional.of(0.0);
+            else return Optional.of(-1.0);
         } else {
-            if (this.root.piece.equals(GameValue.MRX)) return Optional.of(0.0);
+            if (this.root.piece.equals(GameValue.MRX)) return Optional.of(-1.0);
             else return Optional.of(1.0);
         }
     }
