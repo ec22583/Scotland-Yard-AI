@@ -27,14 +27,24 @@ public class Node {
 //  Used to record who has won the game.
 
     public enum GameValue {
-        MRXLOSS,
-        MRXWIN,
+        MRX,
+        BLUE,
+        RED,
+        GREEN,
+        YELLOW,
+        WHITE,
         NONE;
 
-        public int getNum() {
-            if (this.equals(MRXWIN)) return 1;
-            else if (this.equals(MRXLOSS)) return 0;
-            else return 0;
+        public Optional<Piece> getWinningPiece () {
+            switch (this) {
+                case MRX ->     { return Optional.of(Piece.MrX.MRX); }
+                case BLUE ->    { return Optional.of(Piece.Detective.BLUE); }
+                case RED ->     { return Optional.of(Piece.Detective.RED); }
+                case GREEN ->   { return Optional.of(Piece.Detective.GREEN); }
+                case YELLOW ->  { return Optional.of(Piece.Detective.YELLOW);}
+                case WHITE ->   { return Optional.of(Piece.Detective.WHITE);}
+                default ->      { return Optional.empty(); }
+            }
         }
     }
 
@@ -204,30 +214,14 @@ public class Node {
         return bestChild;
     }
 
-    public Optional<Piece> getGameWinner (Board.GameState gameState) {
-        if (gameState.getWinner().isEmpty()) return Optional.empty();
-
-        if (gameState.getWinner().asList().get(0).isMrX()) {
-            return Optional.of(Piece.MrX.MRX);
-        }
-//      Assumes that the winner was the last person to move by default.
-        else {
-            return Optional.of(this.parent.piece);
-        }
-    }
-
     public boolean isGameOver () {
         return !this.getGameState().getWinner().isEmpty();
     }
 
-    static public GameValue getGameValue (Board.GameState gameState) {
+    static private GameValue getGameWinner (Board.GameState gameState) {
         if (gameState.getWinner().isEmpty()) return GameValue.NONE;
-
-        if (gameState.getWinner().asList().get(0).isMrX()) {
-            return GameValue.MRXWIN;
-        } else {
-            return GameValue.MRXLOSS;
-        }
+        else if (gameState.getWinner().asList().get(0).isMrX()) return GameValue.MRX;
+        else return GameValue.BLUE;
     }
 
     // Simulation/Playoff stage
@@ -235,7 +229,7 @@ public class Node {
         Board.GameState currentGameState = this.gameState;
 
         if (this.isGameOver()) {
-            return this.getGameValue(currentGameState);
+            return this.getGameWinner(currentGameState);
         }
 
         while (currentGameState.getWinner().isEmpty()) {
@@ -248,36 +242,36 @@ public class Node {
         }
 
         // if (childNode.getPiece().isMrX() || this.getPiece().isMrX()) {
-        return this.getGameValue(currentGameState);
+        return this.getGameWinner(currentGameState);
     }
 
-//  Adds a win made by the current turn's detective to the node.
-    private void addSelfWin () {
-        this.totalPlays += 1;
-        this.totalValue += 1;
+    private Optional<Double> calculateValue (GameValue value) {
+        if (value.equals(GameValue.NONE)) return Optional.empty();
+
+        if (value.equals(GameValue.MRX)) {
+            if (this.root.piece.equals(GameValue.MRX)) return Optional.of(1.0);
+            else return Optional.of(0.0);
+        } else {
+            if (this.root.piece.equals(GameValue.MRX)) return Optional.of(0.0);
+            else return Optional.of(1.0);
+        }
     }
 
-//  Used if a different detective to the current turn's detective made the win.
-    private void addOtherWin () {
-        this.totalPlays += 1;
-        this.totalValue += 1;
-    }
-
-//  Used if the
-    private void addLoss () {
-        this.totalPlays += 1;
-        this.totalValue += 0;
-    }
 
     // Backpropagation stage
-    public GameValue backpropagation (GameValue value) {
+    public GameValue backPropagation(GameValue value) {
         this.totalPlays += 1;
-        this.totalValue += value.getNum();
+
+        Optional<Double> doubleOptional = this.calculateValue(value);
+        if (doubleOptional.isEmpty())
+            throw new IllegalArgumentException("Trying to back propagate a non winning state");
+
+        this.totalValue += doubleOptional.get();
 
 //      Root node
         if (this.parent == null) return value;
 
         // Upwards recursion
-            return this.parent.backpropagation(value);
+            return this.parent.backPropagation(value);
     }
 }

@@ -31,7 +31,7 @@ public class MCTS extends Thread {
         else gameValue = Node.getGameValue(node.getGameState());
 
         // Backpropagation Stage
-        node.backpropagation(gameValue);
+        node.backPropagation(gameValue);
     }
 
     //Main component to execute the algorithm

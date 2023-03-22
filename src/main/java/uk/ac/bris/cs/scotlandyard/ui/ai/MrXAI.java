@@ -15,9 +15,8 @@ import java.util.concurrent.*;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
 // Separate AI Entity Behaviour
-public class MrXAI {
+public class MrXAI implements AI {
     private GameStateFactory gameStateFactory;
-    private GameSetup gameSetup;
     Node mctsTree;
     Board.GameState gameState;
 
@@ -26,7 +25,7 @@ public class MrXAI {
     }
 
     //Helper function of generateBestMove
-    public void sleepThread(Pair<Long, TimeUnit> timeoutPair){
+    private void sleepThread(Pair<Long, TimeUnit> timeoutPair){
         try {
 //          Sleeps the program for the (time - 500 ms).
             Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 500);
@@ -38,10 +37,9 @@ public class MrXAI {
 
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
-        this.gameSetup = board.getSetup();
         this.gameState = gameStateFactory.generateMrXGameState(board);
 
-        this.mctsTree = new Node(gameState);
+        this.mctsTree = new Node(this.gameState);
         MCTS mcts = new MCTS(mctsTree);
 
 //      Starts thread that runs the Monte Carlo Tree Search.
