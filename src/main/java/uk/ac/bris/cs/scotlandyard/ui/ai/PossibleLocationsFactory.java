@@ -72,7 +72,7 @@ public class PossibleLocationsFactory {
                 Set<EndpointPair<Integer>> edges = graph.incidentEdges(oldPossibleLocation);
                 Set<EndpointPair<Integer>> possibleLocations;
                 if (usedTicket.equals(ScotlandYard.Ticket.SECRET)) {
-                    possibleLocations = ImmutableSet.copyOf(edges);
+                    possibleLocations = ImmutableSet.copyOf(edges); //Anywhere can be accessed using secret tickets
                 }
                 else {
                     possibleLocations = ImmutableSet.copyOf(edges
@@ -129,7 +129,6 @@ public class PossibleLocationsFactory {
                 throw new IllegalArgumentException("Trying to set new known location on hidden move");
 
             int newTurn = turn + 1;
-
             MyPossibleLocations newPossibleLocations = new MyPossibleLocations(
                     List.of(revealEntry.location().get()), newTurn);
 
