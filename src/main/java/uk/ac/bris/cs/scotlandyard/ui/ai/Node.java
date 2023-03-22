@@ -1,6 +1,7 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
+import org.checkerframework.checker.nullness.Opt;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
@@ -25,7 +26,6 @@ public class Node {
     final private double EXPLORATION_VALUE = 0.8;
 
 //  Used to record who has won the game.
-
     public enum GameValue {
         MRX,
         BLUE,
@@ -56,6 +56,8 @@ public class Node {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
         this.root = this;
+
+        System.out.println("Current turn: " + this.piece);
 
         this.remainingMoves = new ArrayList<>(gameState
                 .getAvailableMoves()
@@ -123,13 +125,22 @@ public class Node {
         return ImmutableList.copyOf(this.children.values());
     }
 
+    /**
+     * @return the child with the best win rate
+     * @throws IllegalStateException if there are no children
+     * */
     public Node getBestChild () {
         // Post conditions will ensure score > -Infinity and bestChild will exist
         double bestScore = Double.NEGATIVE_INFINITY;
         Node bestChild = null;
 
+        if (this.children.size() == 0) throw new IllegalStateException("Cannot get best child of leaf node");
+
         for (Node child : this.children.values()) {
             double currentScore = child.getTotalValue()/child.getTotalPlays();
+//            System.out.println("Piece :" + child.getPiece());
+//            System.out.println("Children of the child" + child.getChildren());
+//            System.out.println("Total value: " + child.getTotalValue() + "Total plays: " + child.getTotalPlays());
 //            System.out.println(String.format("Score for %s: %s", child.getPreviousMove(), currentScore));
             if (currentScore > bestScore) {
                 System.out.println("Found child with higher score: " + child.getPreviousMove());
@@ -218,6 +229,7 @@ public class Node {
     }
 
     static public GameValue getGameWinner (Board.GameState gameState) {
+        System.out.println("Current winner list: " + gameState.getWinner());
         if (gameState.getWinner().isEmpty()) return GameValue.NONE;
         else if (gameState.getWinner().asList().get(0).isMrX()) return GameValue.MRX;
         else return GameValue.BLUE;
@@ -227,9 +239,8 @@ public class Node {
     public GameValue simulateGame () {
         Board.GameState currentGameState = this.gameState;
 
-        if (this.isGameOver()) {
-            return this.getGameWinner(currentGameState);
-        }
+        //Anchor case
+        if (this.isGameOver()) return this.getGameWinner(currentGameState);
 
         while (currentGameState.getWinner().isEmpty()) {
             Move randomMove = currentGameState.getAvailableMoves()
@@ -240,18 +251,19 @@ public class Node {
             currentGameState = currentGameState.advance(randomMove);
         }
 
-        // if (childNode.getPiece().isMrX() || this.getPiece().isMrX()) {
+        //Recursive case
         return this.getGameWinner(currentGameState);
     }
 
     private Optional<Double> calculateValue (GameValue value) {
         if (value.equals(GameValue.NONE)) return Optional.empty();
 
-        if (value.equals(GameValue.MRX)) {
-            if (this.root.piece.equals(GameValue.MRX)) return Optional.of(1.0);
+        // If the root is MrX and checking he wins or not
+        if (this.root.piece.equals(Piece.MrX.MRX)) {
+            if (value.equals(GameValue.MRX)) return Optional.of(1.0);
             else return Optional.of(-1.0);
         } else {
-            if (this.root.piece.equals(GameValue.MRX)) return Optional.of(-1.0);
+            if (value.equals(GameValue.MRX)) return Optional.of(-1.0);
             else return Optional.of(1.0);
         }
     }

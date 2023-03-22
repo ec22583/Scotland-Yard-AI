@@ -16,12 +16,11 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
 // Separate AI Entity Behaviour
 public class MrXAI implements AI {
-    private GameStateFactory gameStateFactory;
+    private AIGameStateFactory aiGameStateFactory;
     Node mctsTree;
-    Board.GameState gameState;
 
     public MrXAI () {
-        this.gameStateFactory = new GameStateFactory();
+        this.aiGameStateFactory = new AIGameStateFactory();
     }
 
     //Helper function of generateBestMove
@@ -37,9 +36,9 @@ public class MrXAI implements AI {
 
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
-        this.gameState = gameStateFactory.generateMrXGameState(board);
+        Board.GameState gameState = this.aiGameStateFactory.buildMrXGameState(board);
 
-        this.mctsTree = new Node(this.gameState);
+        this.mctsTree = new Node(gameState);
         MCTS mcts = new MCTS(mctsTree);
 
 //      Starts thread that runs the Monte Carlo Tree Search.

@@ -23,11 +23,19 @@ public interface PossibleLocations {
     /**
      * When MrX surfaces on a revealing round, clear previous possible locations and add his definite location
      * @param  board The current game board
+     * @param  turn The turn the reveal is on
      * @return List of length 1 of the possible locations
      * @throws IllegalArgumentException If attempting to set a new known location on a hidden move
      * */
-    public PossibleLocations newKnownLocation (Board board);
+    public PossibleLocations newKnownLocation (Board board, int turn);
 
-//  Get the list of locations.
     public List<Integer> getLocations ();
+
+    /**
+     * Gets the current turn from the class.
+     * @return int of current turn
+     */
+
+    @Nonnull
+    int getTurn ();
 }

@@ -71,13 +71,13 @@ public class PossibleLocationsFactory {
 
         @Override @Nonnull
         public MyPossibleLocations updateLocations (Board board) {
-
             List<ScotlandYard.Ticket> mrXTickets = new ArrayList<>(2);
             if (board.getMrXTravelLog().size() - this.turn > 2){
                 throw new IllegalArgumentException("Can't go further than a double move");
             }
 
-            for (int i = this.turn + 1; i < board.getMrXTravelLog().size(); i++) {
+            // if the move is a revealing turn then set current to his (MrX) new known location
+            for (int i = this.turn; i < board.getMrXTravelLog().size(); i++) {
                 mrXTickets.add(board.getMrXTravelLog().get(i).ticket());
             }
 
@@ -99,12 +99,12 @@ public class PossibleLocationsFactory {
         }
 
         @Override @Nonnull
-        public MyPossibleLocations newKnownLocation (Board board) {
-            LogEntry revealEntry = board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 1);
+        public MyPossibleLocations newKnownLocation (Board board, int turn) {
+            LogEntry revealEntry = board.getMrXTravelLog().get(turn);
             if (revealEntry.location().isEmpty())
                 throw new IllegalArgumentException("Trying to set new known location on hidden move");
 
-            int newTurn = board.getMrXTravelLog().size() - 1;
+            int newTurn = turn + 1;
 
             MyPossibleLocations newPossibleLocations = new MyPossibleLocations(
                     List.of(revealEntry.location().get()), newTurn);
@@ -114,6 +114,11 @@ public class PossibleLocationsFactory {
 
         public ImmutableList<Integer> getLocations () {
             return ImmutableList.copyOf(this.locations);
+        }
+
+        @Override @Nonnull
+        public int getTurn(){
+            return this.turn;
         }
     }
 

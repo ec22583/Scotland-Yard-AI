@@ -11,13 +11,13 @@ import java.util.concurrent.TimeUnit;
 
 public class DetectiveAI implements AI{
     private PossibleLocations possibleLocations;
-    private GameStateFactory gameStateFactory;
+    private AIGameStateFactory aiGameStateFactory;
     private PossibleLocationsFactory possibleLocationsFactory;
     private List<Board.GameState> gameStates;
     private Node mctsTree;
 
     public DetectiveAI () {
-        this.gameStateFactory = new GameStateFactory();
+        this.aiGameStateFactory = new AIGameStateFactory();
         this.possibleLocationsFactory = new PossibleLocationsFactory();
     }
 
@@ -32,31 +32,46 @@ public class DetectiveAI implements AI{
         }
     }
 
-    @Override
-    public Move generateBestMove(Board board, Pair<Long, TimeUnit> timeoutPair) {
-        if (this.possibleLocations == null) {
-            this.possibleLocations = possibleLocationsFactory.buildFromInitialBoard(board);
-        } else {
-            if (board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 1).location().isPresent()) {
-                this.possibleLocations = this.possibleLocations.newKnownLocation(board);
-            } else {
-                this.possibleLocations = this.possibleLocations.updateLocations(board);
-            }
-        }
-
-        this.gameStates = gameStateFactory.generateDetectiveGameStates(board, this.possibleLocations);
-
-        Board.GameState randomGameState = this.gameStates.get(
-                new Random().nextInt(this.gameStates.size())
-        );
-
-        this.mctsTree = new Node(randomGameState);
+    //Runs MCTS and AI Threads
+    public void runThreads(Pair<Long, TimeUnit> timeoutPair){
         MCTS mcts = new MCTS(mctsTree);
 
 //      Starts thread that runs the Monte Carlo Tree Search.
         mcts.start();
         this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run
         mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
+    }
+
+    @Override
+    public Move generateBestMove(Board board, Pair<Long, TimeUnit> timeoutPair) {
+        if (this.possibleLocations == null) {
+            this.possibleLocations = possibleLocationsFactory.buildFromInitialBoard(board);
+        }
+        //If the turn count is less than the travel log size
+        else if (this.possibleLocations.getTurn() < board.getMrXTravelLog().size()) {
+            if (board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 1).location().isPresent()) {
+                this.possibleLocations =
+                        this.possibleLocations.newKnownLocation(board, board.getMrXTravelLog().size() - 1);
+            }
+            // if it is at a revealing move
+            else if (board.getMrXTravelLog().size() > 1 && board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 2).location().isPresent()) {
+                this.possibleLocations =
+                        this.possibleLocations.newKnownLocation(board, board.getMrXTravelLog().size() - 2);
+                this.possibleLocations = this.possibleLocations.updateLocations(board);
+            } else {
+                this.possibleLocations = this.possibleLocations.updateLocations(board);
+            }
+        }
+
+        this.gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
+
+        Board.GameState randomGameState = this.gameStates.get(
+                new Random().nextInt(this.gameStates.size())
+        );
+
+        this.mctsTree = new Node(randomGameState);
+
+        runThreads(timeoutPair);
 
         return this.mctsTree.getBestChild().getPreviousMove();
     }

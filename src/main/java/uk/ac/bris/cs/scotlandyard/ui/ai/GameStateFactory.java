@@ -18,32 +18,6 @@ import java.util.List;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 
 public class GameStateFactory {
-    //Helper function
-    static private ImmutableList<Player> getDetectives (Board board){
-
-        List<Player> detectives = new LinkedList<Player>(board
-                .getPlayers()
-                .stream()
-                .filter(p -> p.isDetective())
-                .map(piece -> {
-                    Optional<Integer> locationOptional = board.getDetectiveLocation((Piece.Detective) piece);
-                    if (locationOptional.isEmpty())
-                        throw new IllegalStateException("Detective location not available.");
-
-                    return new Player(
-                                    piece,
-                                    // Generates tickets for piece.
-                                    BoardHelpers.getTicketsForPlayer(board, piece),
-                                    //  Piece must be cast to a Detective. Not an issue since mrx filtered out earlier
-                                    // (For type safety). .get() fine as piece always is a detective.
-                                    locationOptional.get()
-                            );
-                        }
-                )
-                .toList()
-        );
-        return ImmutableList.copyOf(detectives);
-    }
 
     public Board.GameState generateMrXGameState (Board board) {
         if (board.getAvailableMoves().isEmpty())
@@ -59,7 +33,7 @@ public class GameStateFactory {
 
 
         Player mrX = new Player(MRX, BoardHelpers.getTicketsForPlayer(board, MRX) , location);
-        ImmutableList<Player> detectives = GameStateFactory.getDetectives(board);
+        ImmutableList<Player> detectives = BoardHelpers.getDetectives(board);
 
         MyGameStateFactory myGameStateFactory = new MyGameStateFactory();
 

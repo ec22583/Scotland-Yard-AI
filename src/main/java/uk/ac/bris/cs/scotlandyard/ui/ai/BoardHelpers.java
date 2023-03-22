@@ -2,20 +2,46 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import uk.ac.bris.cs.scotlandyard.model.Board;
-import uk.ac.bris.cs.scotlandyard.model.GameSetup;
-import uk.ac.bris.cs.scotlandyard.model.Piece;
-import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
+import uk.ac.bris.cs.scotlandyard.model.*;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 @SuppressWarnings("ALL")
 public interface BoardHelpers {
+
     /**
      * Possible starting locations of all players.
      */
     int[] START_LOCATIONS = {35, 45, 51, 71, 78, 104, 106, 127, 132, 166, 170, 172};
+
+    @Nonnull
+    static ImmutableList<Player> getDetectives (Board board){
+
+        List<Player> detectives = new LinkedList<Player>(board
+                .getPlayers()
+                .stream()
+                .filter(p -> p.isDetective())
+                .map(piece -> {
+                            Optional<Integer> locationOptional = board.getDetectiveLocation((Piece.Detective) piece);
+                            if (locationOptional.isEmpty())
+                                throw new IllegalStateException("Detective location not available.");
+
+                            return new Player(
+                                    piece,
+                                    // Generates tickets for piece.
+                                    BoardHelpers.getTicketsForPlayer(board, piece),
+                                    //  Piece must be cast to a Detective. Not an issue since mrx filtered out earlier
+                                    // (For type safety). .get() fine as piece always is a detective.
+                                    locationOptional.get()
+                            );
+                        }
+                )
+                .toList()
+        );
+        return ImmutableList.copyOf(detectives);
+    }
+
 
     /**
      * Gets the locations of all detectives from the current board.
@@ -69,8 +95,12 @@ public interface BoardHelpers {
         List<Boolean> moveSetup = new LinkedList<>();
 
 //      Ensures that MrX is always visible to himself
-        for (int i = 0; i < (board.getSetup().moves.size() - board.getMrXTravelLog().size()); i++) {
-            moveSetup.add(true);
+        for (int i = 0; i < board.getSetup().moves.size(); i++) {
+            if (i < board.getMrXTravelLog().size()) {
+                moveSetup.add(board.getMrXTravelLog().get(i).location().isPresent());
+            } else {
+                moveSetup.add(true);
+            }
         }
 
         return new GameSetup(
