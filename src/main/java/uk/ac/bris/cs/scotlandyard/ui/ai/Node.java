@@ -225,7 +225,6 @@ public class Node {
     }
 
     static public GameValue getGameWinner (Board.GameState gameState) {
-        System.out.println("Current winner list: " + gameState.getWinner());
         if (gameState.getWinner().isEmpty()) return GameValue.NONE;
         else if (gameState.getWinner().asList().get(0).isMrX()) return GameValue.MRX;
         else return GameValue.BLUE;

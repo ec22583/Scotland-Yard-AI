@@ -371,20 +371,14 @@ public class AIGameStateFactory {
             ImmutableSet<Piece> newRemaining = ImmutableSet.copyOf(
                     this.detectives
                     .stream()
-                    .filter(d -> ( (MyGameState.makeSingleMoves(this.setup, updatedDetectives, d, d.location()).size()) > 0))
+                    .filter(d -> !MyGameState.makeSingleMoves(
+                            this.setup,
+                            updatedDetectives,
+                            d,
+                            d.location()
+                        ).isEmpty()
+                    )
                     .map(d -> d.piece())
-                    .filter(d -> {
-                        Optional<Player> optionalPlayer = getPlayerFromPiece(d);
-                        if (optionalPlayer.isEmpty()) throw new IllegalStateException("Detective not found");
-                        Player player = optionalPlayer.get();
-
-//						Check if player has tickets
-                        return player.tickets()
-                                .values()
-                                .stream()
-                                .mapToInt(Integer::intValue)
-                                .sum() != 0;
-                    })
                     .toList());
 
             return newRemaining;

@@ -12,8 +12,9 @@ public class MCTS extends Thread {
     public void iterationAlgorithm () {
         Node node = this.mctsTree;
 
-        // Selection Stage
-        while (node.isFullyExpanded()) {
+        // Selection Stage.
+        // Stops selecting when node is not fully expanded or game is already won.
+        while (node.isFullyExpanded() && !node.isGameOver()) {
             node = node.selectChild();
         }
 
