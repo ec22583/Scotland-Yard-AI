@@ -35,7 +35,6 @@ public interface PossibleLocations {
      * Gets the current turn from the class.
      * @return int of current turn
      */
-
     @Nonnull
     int getTurn ();
 }

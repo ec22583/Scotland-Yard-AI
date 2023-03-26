@@ -426,11 +426,10 @@ public class AIGameStateFactory {
                 if (this.remaining.size() <= 1) newRemaining = ImmutableSet.of(mrX.piece());
                 else {
                     newRemaining = removedMovedPlayerFromRemaining(move, updatedDetectives);
-
-                    // if there are no remaining players then it's Mr X's turn
-                    if (newRemaining.isEmpty()) newRemaining = ImmutableSet.of(Piece.MrX.MRX);
                 }
             }
+            // if there are no remaining players then it's Mr X's turn
+            if (newRemaining.isEmpty()) newRemaining = ImmutableSet.of(Piece.MrX.MRX);
             return newRemaining;
         }
 
