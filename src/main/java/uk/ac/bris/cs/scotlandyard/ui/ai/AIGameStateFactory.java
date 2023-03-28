@@ -64,7 +64,7 @@ public class AIGameStateFactory {
                             .map(d -> d.piece())
                             .toList());
                 }
-//				Checks if any detectives have tickets remaining.
+//				Checks if any detectives have possible moves remaining.
                 if (!MyGameState.makeSingleMoves(setup, detectives, detective, detective.location()).isEmpty()) {
                     detectivesHaveMoves = true;
                 }
