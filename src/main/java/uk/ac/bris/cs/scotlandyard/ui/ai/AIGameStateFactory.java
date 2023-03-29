@@ -520,7 +520,7 @@ public class AIGameStateFactory {
 		 * @param newDestination New location of player
 		 * @return New mrX state after move carried out
 		 */
-		private Player generateNewMrX (Player player, Set<ScotlandYard.Ticket> singleTickets, int newDestination) {
+		private Player generateNewMrX (Player player, List<ScotlandYard.Ticket> singleTickets, int newDestination) {
 			Player newMrX;
 			if (player.piece().isMrX()) {
 				newMrX = player.use(singleTickets);
@@ -553,12 +553,12 @@ public class AIGameStateFactory {
 			if (playerOptional.isEmpty()) throw new IllegalArgumentException("Move on non existent player");
 			Player player = playerOptional.get();
 
-			Set<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
+			List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
 			// Moves player to their new destination.
 			int newDestination = move.accept(new MoveVisitors.DestinationVisitor());
 
-			List<Player> updatedDetectives = this.generateNewDetectives(player, tickets, newDestination);
+			List<Player> updatedDetectives = this.generateNewDetectives(player, ImmutableSet.copyOf(tickets), newDestination);
 
 			return new MyGameState(
 					this.setup,

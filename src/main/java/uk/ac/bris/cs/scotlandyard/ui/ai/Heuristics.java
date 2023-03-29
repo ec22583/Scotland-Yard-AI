@@ -1,10 +1,21 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.graph.EndpointPair;
+import com.google.common.graph.ImmutableValueGraph;
+import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
+import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
+
+import javax.annotation.Nonnull;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 //Wrapper class for all Heuristics (interfaces)
-public class Heuristics {
+public interface Heuristics {
 
     /**
      * Create a pre-computed distance table from every node to every node
@@ -14,37 +25,103 @@ public class Heuristics {
      * players blocking the path of a shortest path.
      * Used in localization categorization and E-greedy playouts.
      * */
-    public void createDijkstraDistanceTable(){
-
-    }
+//    public void createDijkstraDistanceTable(){
+//
+//    }
 
     /**
      * Apply rules to improve MrX's use of secret tickets (Ticket economy)
      * */
     public class MoveFiltering {
 
-        //TODO: I have designed a framework for Move filtering. We just need to
-        //implement all of them.
-        // We also need to implement all appropriate return types
-
-        private void removeFromFirstTwoRounds(){
+        public interface FilterStrategy {
+            /**
+             * Used to filter out moves. True keeps a move and false removes a move.
+             * @param move Move to check
+             * @param gameState Game state used for context
+             * @return Boolean of whether move should be kept
+             */
+            boolean execute (Move move, AIGameState gameState);
         }
 
-        private void removeFromRevealingRound(){
+        public class RemoveFromFirstTwoRounds implements FilterStrategy{
+            @Override @Nonnull
+            public boolean execute (Move move, AIGameState gameState){
+                List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
+                if (tickets.contains(ScotlandYard.Ticket.SECRET) &&
+                        gameState.getMrXTravelLog().size() <= 2 ) return false;
+                else return true;
+            }
         }
 
-        private void allPossibleLocationsHaveTaxis(){
+        public class RemoveFromRevealingRound implements FilterStrategy{
+            @Override @Nonnull
+            public boolean execute (Move move, AIGameState gameState){
+                List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
+//              Check if move at current turn is a reveal move
+                if (tickets.contains(ScotlandYard.Ticket.SECRET) && gameState
+                        .getSetup()
+                        .moves
+                        .get(gameState.getMrXTravelLog().size())
+                        .equals(true)
+                        ) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
         }
 
         /**
-         * Method used to apply secret ticket filtering.
+         * @throws IllegalArgumentException if edge on a graph isn't found
          * */
-        public void filterSecretTickets(){
-            this.removeFromFirstTwoRounds();
-            this.removeFromRevealingRound();
-            this.allPossibleLocationsHaveTaxis();
+        public class AllPossibleLocationsHaveTaxis implements FilterStrategy{
+            @Override @Nonnull
+            public boolean execute (Move move, AIGameState gameState){
+                List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
+                ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph =
+                        gameState.getSetup().graph;
+                Set<EndpointPair<Integer>> edges =
+                        gameState.getSetup().graph.incidentEdges(move.source());
+
+                // if it isn't (both a secret ticket and all the edges use taxi tickets)
+                return !(tickets.contains(ScotlandYard.Ticket.SECRET) &&
+                        edges
+                        .stream()
+                        .parallel()
+                        .allMatch(e -> {
+                            Optional<ImmutableSet<ScotlandYard.Transport>> optionalTransports = graph.edgeValue(e);
+                            if (optionalTransports.isEmpty())
+                                throw new IllegalArgumentException("Cannot find edge on graph");
+                            return (optionalTransports.get().contains(ScotlandYard.Transport.TAXI));
+                        }));
+            }
+        }
+
+        private List<FilterStrategy> filterStrategies = ImmutableList.of(
+                new RemoveFromFirstTwoRounds(),
+                new RemoveFromRevealingRound(),
+                new AllPossibleLocationsHaveTaxis()
+        );
+
+        /**
+         *
+         * @param move Move to be checked
+         * @param gameState gamestate to pass in any required information for the filter algorithms
+         * @return boolean if move satisfies all filtering
+         * */
+        public boolean checkMove (Move move, AIGameState gameState) {
+            if (move.commencedBy().isMrX()){
+//              If a move satisfies all filter algorithms then returns true
+
+                return filterStrategies
+                        .stream()
+                        .allMatch(f -> f.execute(move, gameState));
+            }
+            // If the move commenced is done by a detective.
+            return true;
         }
     }
 

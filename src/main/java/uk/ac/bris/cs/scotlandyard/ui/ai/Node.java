@@ -1,8 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
-import org.checkerframework.checker.nullness.Opt;
-import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
 
@@ -24,25 +22,39 @@ public class Node {
     private Node parent = null;
     final private Node root;
     final private double EXPLORATION_VALUE = 0.8;
+    final private Heuristics.MoveFiltering moveFilter;
 
     /**
-     * Constructor for the root node
+     * Helper function to Constructors
      * @param gameState Current game state
+     * @return Filtered list of moves possible from current game state
      * */
-    public Node (AIGameState gameState) {
-        this.gameState = gameState;
-        this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
-        this.root = this;
-
-        System.out.println("Current turn: " + this.piece);
-
-        this.remainingMoves = new ArrayList<>(gameState
+    private List<Move> applyMoveFilterHeuristic(AIGameState gameState){
+        return new ArrayList<>(gameState
                 .getAvailableMoves()
                 .asList()
                 .stream()
                 .filter(m -> m.commencedBy().equals(this.piece))
-                .toList()
-        );
+                .filter(m -> this.moveFilter.checkMove(m, gameState))
+                .toList());
+    }
+
+    /**
+     * Constructor for the root node
+     * @param gameState Current game state
+     * @param moveFilter move filtering heuristic
+     * */
+    public Node (AIGameState gameState, Heuristics.MoveFiltering moveFilter) {
+        this.gameState = gameState;
+        this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
+        this.root = this;
+        this.moveFilter = moveFilter;
+
+        System.out.println("Current turn: " + this.piece);
+
+        //Application of the move filtering heuristic
+        this.remainingMoves = applyMoveFilterHeuristic(gameState);
+
         this.totalValue = 0;
         this.totalPlays = 0;
         this.children = new ConcurrentHashMap<>();
@@ -56,23 +68,23 @@ public class Node {
      * @param parent parent of this node
      * @param previousMove move that would traverse from the parent node to this node
      * */
-    public Node (AIGameState gameState, Node root, Node parent, Move previousMove) {
+    public Node (AIGameState gameState,
+                 Node root,
+                 Node parent,
+                 Move previousMove,
+                 Heuristics.MoveFiltering moveFilter) {
         this.gameState = gameState;
         this.root = root;
         this.parent = parent;
         this.previousMove = previousMove;
         this.children = new ConcurrentHashMap<>();
+        this.moveFilter = moveFilter;
 
 //      Win state reached (Can't expand anymore)
         if (!gameState.getWinner().isEmpty()) this.piece = parent.piece;
         else this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
 
-        this.remainingMoves = new ArrayList<>(gameState
-                .getAvailableMoves()
-                .asList()
-                .stream()
-                .filter(m -> m.commencedBy().equals(this.piece))
-                .toList());
+        this.remainingMoves = applyMoveFilterHeuristic(gameState);
 
         this.totalValue = 0.0;
         this.totalPlays = 0.0;
@@ -142,7 +154,7 @@ public class Node {
         remainingMoves.remove(nextMove);
 
         AIGameState newGameState = this.gameState.advance(nextMove);
-        Node newNode = new Node(newGameState, this.root, this, nextMove);
+        Node newNode = new Node(newGameState, this.root, this, nextMove, this.moveFilter);
         this.children.put(newGameState.hashCode(), newNode);
 
         return newNode;
@@ -201,8 +213,8 @@ public class Node {
         return bestChild;
     }
 
-    public boolean isGameOver () {
-        return !this.getGameState().getWinner().isEmpty();
+    public boolean isNotGameOver() {
+        return this.getGameState().getWinner().isEmpty();
     }
 
 
@@ -218,7 +230,7 @@ public class Node {
             if (optionalMove.isEmpty()) {
                 throw new IllegalArgumentException("Cannot get detective winner of initial game state");
             }
-            return Optional.of(gameState.getPreviousMove().get().commencedBy());
+            return Optional.of(optionalMove.get().commencedBy());
         }
     }
 

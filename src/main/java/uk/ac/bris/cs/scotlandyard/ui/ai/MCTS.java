@@ -18,7 +18,7 @@ public class MCTS extends Thread {
 
         // Selection Stage.
         // Stops selecting when node is not fully expanded or game is already won.
-        while (node.isFullyExpanded() && !node.isGameOver()) {
+        while (node.isFullyExpanded() && node.isNotGameOver()) {
             node = node.selectChild();
         }
 
@@ -26,7 +26,7 @@ public class MCTS extends Thread {
 
 //      If game state is not a winning game state.
         // Else don't run expansion simulation or backpropagation
-        if (!node.isGameOver()) {
+        if (node.isNotGameOver()) {
             // Expansion Stage
             node = node.expandNode();
 

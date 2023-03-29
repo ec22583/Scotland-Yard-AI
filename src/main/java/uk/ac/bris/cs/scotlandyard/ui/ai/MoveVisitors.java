@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import com.google.common.collect.ImmutableList;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
@@ -10,20 +11,15 @@ import java.util.Set;
 
 interface MoveVisitors {
     //  Returns all tickets used in a move.
-    public class TicketVisitor implements Move.Visitor<Set<ScotlandYard.Ticket>> {
-        Set<ScotlandYard.Ticket> tickets = new HashSet<ScotlandYard.Ticket>();
-
+    public class TicketVisitor implements Move.Visitor<List<ScotlandYard.Ticket>> {
         @Override
-        public Set<ScotlandYard.Ticket> visit(Move.SingleMove move) {
-            tickets.add(move.ticket);
-            return tickets;
+        public List<ScotlandYard.Ticket> visit(Move.SingleMove move) {
+            return ImmutableList.of(move.ticket);
         }
 
         @Override
-        public Set<ScotlandYard.Ticket> visit(Move.DoubleMove move) {
-            tickets.add(move.ticket1);
-            tickets.add(move.ticket2);
-            return tickets;
+        public List<ScotlandYard.Ticket> visit(Move.DoubleMove move) {
+            return ImmutableList.of(move.ticket1, move.ticket2);
         }
     }
 
