@@ -64,6 +64,8 @@ public class DetectiveAI implements AI{
         }
 
         this.gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
+//      Remove any already winning game states since they are not possible.
+        this.gameStates = this.gameStates.stream().filter(s -> s.getWinner().isEmpty()).toList();
 
         Board.GameState randomGameState = this.gameStates.get(
                 new Random().nextInt(this.gameStates.size())
