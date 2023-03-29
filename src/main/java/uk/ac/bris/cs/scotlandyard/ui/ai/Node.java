@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 // Our own node data structure
 public class Node {
-    final private Board.GameState gameState;
+    final private AIGameState gameState;
     private Move previousMove = null;
     final private Piece piece; //Either MrX or a Detective
     private List<Move> remainingMoves; //Pre-filtered
@@ -52,7 +52,7 @@ public class Node {
      * Constructor for the root node
      * @param gameState Current game state
      * */
-    public Node (Board.GameState gameState) {
+    public Node (AIGameState gameState) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
         this.root = this;
@@ -79,7 +79,7 @@ public class Node {
      * @param parent parent of this node
      * @param previousMove move that would traverse from the parent node to this node
      * */
-    public Node (Board.GameState gameState, Node root, Node parent, Move previousMove) {
+    public Node (AIGameState gameState, Node root, Node parent, Move previousMove) {
         this.gameState = gameState;
         this.root = root;
         this.parent = parent;
@@ -101,7 +101,7 @@ public class Node {
         this.totalPlays = 0;
     }
 
-    public Board.GameState getGameState () {
+    public AIGameState getGameState () {
         return this.gameState;
     }
 
@@ -164,7 +164,7 @@ public class Node {
         Move nextMove = remainingMoves.get(new Random().nextInt(remainingMoves.size()));
         remainingMoves.remove(nextMove);
 
-        Board.GameState newGameState = this.gameState.advance(nextMove);
+        AIGameState newGameState = this.gameState.advance(nextMove);
         Node newNode = new Node(newGameState, this.root, this, nextMove);
         this.children.put(newGameState.hashCode(), newNode);
 
@@ -224,18 +224,25 @@ public class Node {
         return !this.getGameState().getWinner().isEmpty();
     }
 
-    static public GameValue getGameWinner (Board.GameState gameState) {
-        if (gameState.getWinner().isEmpty()) return GameValue.NONE;
-        else if (gameState.getWinner().asList().get(0).isMrX()) return GameValue.MRX;
-        else return GameValue.BLUE;
+    static public Optional<Piece> getGameWinner (AIGameState gameState) {
+        if (gameState.getWinner().isEmpty()) return Optional.empty();
+        else if (gameState.getWinner().asList().get(0).isMrX()) return Optional.of(Piece.MrX.MRX);
+        else {
+            Optional<Move> optionalMove = gameState.getPreviousMove();
+            if (optionalMove.isEmpty()) {
+                throw new IllegalArgumentException("Cannot get detective winner of initial game state");
+            }
+            return Optional.of(gameState.getPreviousMove().get().commencedBy());
+        }
     }
 
     // Simulation/Playoff stage
-    public GameValue simulateGame () {
-        Board.GameState currentGameState = this.gameState;
+    public Piece simulateGame () {
+        AIGameState currentGameState = this.gameState;
 
         //Anchor case
-        if (this.isGameOver()) return this.getGameWinner(currentGameState);
+        if (this.getGameWinner(currentGameState).isPresent())
+            return this.getGameWinner(currentGameState).get();
 
         while (currentGameState.getWinner().isEmpty()) {
             Move randomMove = currentGameState.getAvailableMoves()
@@ -246,33 +253,30 @@ public class Node {
             currentGameState = currentGameState.advance(randomMove);
         }
 
+        Optional<Piece> optionalWinner = Node.getGameWinner(currentGameState);
+        if (optionalWinner.isEmpty())
+            throw new IllegalStateException("Cannot get winner for winning game state");
+
         //Recursive case
-        return this.getGameWinner(currentGameState);
+        return optionalWinner.get();
     }
 
-    private Optional<Double> calculateValue (GameValue value) {
-        if (value.equals(GameValue.NONE)) return Optional.empty();
-
-        // If the root is MrX and checking he wins or not
-        if (this.root.piece.equals(Piece.MrX.MRX)) {
-            if (value.equals(GameValue.MRX)) return Optional.of(1.0);
-            else return Optional.of(-1.0);
+    public double calculateValue (Piece value) {
+        if (this.root.piece.equals(value)) {
+            return 1;
+        } else if (this.root.piece.isDetective() && value.isDetective()) {
+            return 0.625;
         } else {
-            if (value.equals(GameValue.MRX)) return Optional.of(-1.0);
-            else return Optional.of(1.0);
+            return 0;
         }
     }
 
 
     // Backpropagation stage
-    public GameValue backPropagation(GameValue value) {
+    public Piece backPropagation(Piece value) {
         this.totalPlays += 1;
 
-        Optional<Double> doubleOptional = this.calculateValue(value);
-        if (doubleOptional.isEmpty())
-            throw new IllegalArgumentException("Trying to back propagate a non winning state");
-
-        this.totalValue += doubleOptional.get();
+        this.totalValue += this.calculateValue(value);
 
 //      Root node
         if (this.parent == null) return value;

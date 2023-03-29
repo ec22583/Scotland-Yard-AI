@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.checkerframework.checker.nullness.Opt;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
 import javax.annotation.Nonnull;
@@ -11,7 +12,7 @@ import java.util.*;
 // A factory to create game states such that the AIs can use it
 // We took this from our Cw-Model coursework (closed task) and modified it for the open task
 public class AIGameStateFactory {
-    private final class MyGameState implements Board.GameState {
+    private final class MyGameState implements AIGameState {
         final private GameSetup setup;
 		final private ImmutableSet<Piece> remaining;
 		final private ImmutableList<LogEntry> log;
@@ -19,12 +20,14 @@ public class AIGameStateFactory {
 		final private List<Player> detectives;
 		final private ImmutableSet<Move> moves;
 		final private ImmutableSet<Piece> winner;
+		final private Move previousMove;
 
 		private MyGameState(final GameSetup setup,
 							final ImmutableSet<Piece> remaining,
 							final ImmutableList<LogEntry> log,
 							final Player mrX,
-							final List<Player> detectives) {
+							final List<Player> detectives,
+							final Move previousMove) {
 
 			checkParamsNotNull(setup, remaining, mrX, detectives);
 			checkDetectives(detectives);
@@ -34,6 +37,7 @@ public class AIGameStateFactory {
 			this.log = log;
 			this.mrX = mrX;
 			this.detectives = detectives;
+			this.previousMove = previousMove;
 
 			ImmutableSet<Piece> winnerSet = MyGameState.getWinners(
 					this.detectives,
@@ -166,20 +170,12 @@ public class AIGameStateFactory {
 			return ImmutableSet.copyOf(players);
 		}
 
-		/**
-		 * Getter method
-		 * @return Current setup for game state.
-		 */
 		@Nonnull
 		@Override
 		public GameSetup getSetup() {
 			return this.setup;
 		}
 
-		/**
-		 * Getter method
-		 * @return Set of all player pieces (not players)
-		 */
 		@Nonnull
 		@Override
 		public ImmutableSet<Piece> getPlayers() {
@@ -206,11 +202,6 @@ public class AIGameStateFactory {
 					.findAny();
 		}
 
-		/**
-		 * Gets the location for a detective if detective exists.
-		 * @param detective Piece for a detective
-		 * @return Optional. Returns int of location if detective exists and empty if no detective exists.
-		 */
 		@Nonnull
 		@Override
 		public Optional<Integer> getDetectiveLocation(Piece.Detective detective) {
@@ -219,11 +210,6 @@ public class AIGameStateFactory {
 			return player.map(Player::location);
 		}
 
-		/**
-		 *
-		 * @param piece Piece for a player.
-		 * @return If player exists, TicketBoard for corresponding player, else empty if no matching player.
-		 */
 		@Nonnull
 		@Override
 		public Optional<TicketBoard> getPlayerTickets(Piece piece) {
@@ -243,20 +229,12 @@ public class AIGameStateFactory {
 
 		}
 
-		/**
-		 * Getter method
-		 * @return Current log for game turn
-		 */
 		@Nonnull
 		@Override
 		public ImmutableList<LogEntry> getMrXTravelLog() {
 			return this.log;
 		}
 
-		/**
-		 * Getter method
-		 * @return Set of winners for current game state.
-		 */
 		@Nonnull
 		@Override
 		public ImmutableSet<Piece> getWinner() {
@@ -368,10 +346,11 @@ public class AIGameStateFactory {
 			return doubleMoves;
 		}
 
-		/**
-		 * Gets all possible moves for all remaining players for a turn
-		 * @return Set of all moves that can be carried out this turn
-		 */
+		@Override
+		public Optional<Move> getPreviousMove() {
+			return Optional.ofNullable(this.previousMove);
+		}
+
 		@Nonnull
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
@@ -561,14 +540,9 @@ public class AIGameStateFactory {
 			return newMrX;
 		}
 
-		/**
-		 * Advances game to the next turn from passed in move
-		 * @param move The chosen move to carry out
-		 * @return The new game state from after move carried out
-		 */
 		@Nonnull
 		@Override
-		public GameState advance(Move move) {
+		public AIGameState advance(Move move) {
 			if (!this.moves.contains(move)) {
 				throw new IllegalArgumentException("Illegal move: " + move);
 			}
@@ -591,18 +565,19 @@ public class AIGameStateFactory {
 					this.generateNewRemaining(move, updatedDetectives),
 					this.generateNewLog(move),
 					this.generateNewMrX(player, tickets, newDestination),
-					updatedDetectives
+					updatedDetectives,
+					move
 			);
 		}
     }
 
     /**
      * Build a game state for Mr X
-     * @param board
+     * @param board The current board for the game state
      * @return a New Game-state replicating the game that MrX can use directly
      * @throws IllegalArgumentException if the board is already a winning state
      */
-    public Board.GameState buildMrXGameState (Board board){
+    public AIGameState buildMrXGameState (Board board){
         if (board.getAvailableMoves().isEmpty()) throw new IllegalArgumentException("Board already winning board");
 
         GameSetup gameSetup = BoardHelpers.generateGameSetup(board);
@@ -620,7 +595,8 @@ public class AIGameStateFactory {
                 ImmutableSet.of(mrXPiece),
                 board.getMrXTravelLog(),
                 mrX,
-                BoardHelpers.getDetectives(board)
+                BoardHelpers.getDetectives(board),
+				null
         );
     }
 
@@ -630,8 +606,8 @@ public class AIGameStateFactory {
      * @param possibleLocations List of possible locations that MrX could be in
      * @return A list of GameStates for each detective respectively
      */
-    public List<Board.GameState> buildDetectiveGameStates (Board board, PossibleLocations possibleLocations) {
-        List<Board.GameState> gameStates = new ArrayList<>(possibleLocations.getLocations().size());
+    public List<AIGameState> buildDetectiveGameStates (Board board, PossibleLocations possibleLocations) {
+        List<AIGameState> gameStates = new ArrayList<>(possibleLocations.getLocations().size());
 		final ImmutableList<Player> detectives = BoardHelpers.getDetectives(board);
 		List<Piece> remaining = new ArrayList<>(detectives.size());
 
@@ -655,7 +631,8 @@ public class AIGameStateFactory {
                             ImmutableSet.copyOf(remaining),
                             board.getMrXTravelLog(),
                             mrX,
-                            detectives
+                            detectives,
+							null
                     )
             );
         }

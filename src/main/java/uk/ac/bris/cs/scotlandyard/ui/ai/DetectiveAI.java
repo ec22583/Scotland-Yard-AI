@@ -3,7 +3,6 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
-import uk.ac.bris.cs.scotlandyard.model.Piece;
 
 import java.util.List;
 import java.util.Random;
@@ -11,9 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 public class DetectiveAI implements AI{
     private PossibleLocations possibleLocations;
-    private AIGameStateFactory aiGameStateFactory;
-    private PossibleLocationsFactory possibleLocationsFactory;
-    private List<Board.GameState> gameStates;
+    final private AIGameStateFactory aiGameStateFactory;
+    final private PossibleLocationsFactory possibleLocationsFactory;
     private Node mctsTree;
 
     public DetectiveAI () {
@@ -63,12 +61,14 @@ public class DetectiveAI implements AI{
             }
         }
 
-        this.gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
-//      Remove any already winning game states since they are not possible.
-        this.gameStates = this.gameStates.stream().filter(s -> s.getWinner().isEmpty()).toList();
+        System.out.printf("Current locations: %s%n", this.possibleLocations.getLocations());
 
-        Board.GameState randomGameState = this.gameStates.get(
-                new Random().nextInt(this.gameStates.size())
+        List<AIGameState> gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
+//      Remove any already winning game states since they are not possible.
+        gameStates = gameStates.stream().filter(s -> s.getWinner().isEmpty()).toList();
+
+        AIGameState randomGameState = gameStates.get(
+                new Random().nextInt(gameStates.size())
         );
 
         this.mctsTree = new Node(randomGameState);

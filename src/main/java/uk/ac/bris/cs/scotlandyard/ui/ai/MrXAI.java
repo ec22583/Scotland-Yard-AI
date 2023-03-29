@@ -36,7 +36,7 @@ public class MrXAI implements AI {
 
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
-        Board.GameState gameState = this.aiGameStateFactory.buildMrXGameState(board);
+        AIGameState gameState = this.aiGameStateFactory.buildMrXGameState(board);
 
         this.mctsTree = new Node(gameState);
         MCTS mcts = new MCTS(mctsTree);

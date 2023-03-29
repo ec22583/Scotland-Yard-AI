@@ -1,8 +1,12 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import uk.ac.bris.cs.scotlandyard.model.Piece;
+
+import java.util.Optional;
+
 // MCTS Algorithm (Monte Carlo tree search)
 public class MCTS extends Thread {
-    private Node mctsTree = null;
+    final private Node mctsTree;
 
     public MCTS (Node mctsTree) {
         this.mctsTree = mctsTree;
@@ -18,7 +22,7 @@ public class MCTS extends Thread {
             node = node.selectChild();
         }
 
-        Node.GameValue gameValue;
+        Piece gameValue;
 
 //      If game state is not a winning game state.
         // Else don't run expansion simulation or backpropagation
@@ -29,10 +33,16 @@ public class MCTS extends Thread {
             // Simulation Stage
             gameValue = node.simulateGame();
         }
-        else gameValue = Node.getGameWinner(node.getGameState());
+        else {
+            Optional<Piece> optionalPiece = Node.getGameWinner(node.getGameState());
+            if (optionalPiece.isEmpty())
+                throw new IllegalStateException("Cannot get winning piece of game state");
+
+            gameValue = optionalPiece.get();
+        }
 
         // Backpropagation Stage
-        node.backPropagation(gameValue);
+        Piece value = node.backPropagation(gameValue);
     }
 
     //Main component to execute the algorithm

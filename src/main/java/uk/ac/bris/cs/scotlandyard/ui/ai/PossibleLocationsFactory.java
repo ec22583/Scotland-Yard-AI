@@ -136,7 +136,7 @@ public class PossibleLocationsFactory {
         }
 
         @Override @Nonnull
-        public int getTurn(){
+        public Integer getTurn(){
             return this.turn;
         }
 
