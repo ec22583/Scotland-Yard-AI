@@ -34,17 +34,22 @@ public class MrXAI implements AI {
         }
     }
 
-    //Evaluate the Best move from a Game tree
-    public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
-        AIGameState gameState = this.aiGameStateFactory.buildMrXGameState(board);
-
-        this.mctsTree = new Node(gameState);
+    public void runThreads(Pair<Long, TimeUnit> timeoutPair){
         MCTS mcts = new MCTS(mctsTree);
 
 //      Starts thread that runs the Monte Carlo Tree Search.
         mcts.start();
         this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run
         mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
+    }
+
+    //Evaluate the Best move from a Game tree
+    public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
+        AIGameState gameState = this.aiGameStateFactory.buildMrXGameState(board);
+
+        this.mctsTree = new Node(gameState);
+
+        this.runThreads(timeoutPair);
 
         return this.mctsTree.getBestChild().getPreviousMove();
     }

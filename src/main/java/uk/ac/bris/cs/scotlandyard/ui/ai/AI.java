@@ -7,5 +7,11 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 import java.util.concurrent.TimeUnit;
 
 public interface AI {
+
+    /**
+     * run algorithm threads (ALlow potential for concurrency)
+     * */
+    void runThreads(Pair<Long, TimeUnit> timeoutPair);
+
     Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair);
 }
