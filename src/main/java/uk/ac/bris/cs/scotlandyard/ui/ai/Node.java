@@ -238,22 +238,12 @@ public class Node {
         return optionalWinner.get();
     }
 
-    public double calculateValue (Piece value) {
-        if (this.root.piece.equals(value)) {
-            return 1;
-        } else if (this.root.piece.isDetective() && value.isDetective()) {
-            return 0.625;
-        } else {
-            return 0;
-        }
-    }
-
-
     // Backpropagation stage
     public Piece backPropagation(Piece value) {
         this.totalPlays += 1;
 
-        this.totalValue += this.calculateValue(value);
+        //Apply Coalition Reduction
+        this.totalValue += Heuristics.CoalitionReduction.calculateValue(this.root.piece, value);
 
 //      Root node
         if (this.parent == null) return value;
