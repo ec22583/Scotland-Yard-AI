@@ -52,7 +52,7 @@ public class AIGameStateFactory {
 
 
 		/**
-		 *
+		 * Gets the current winners for the game state.
 		 * @param detectives The current detective players for the turn
 		 * @param mrX The current mrX player for the turn
 		 * @param setup The setup for the game
