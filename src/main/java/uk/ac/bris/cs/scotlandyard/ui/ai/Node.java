@@ -23,6 +23,7 @@ public class Node {
     final private Node root;
     final private double EXPLORATION_VALUE = 0.8;
     final private Heuristics.MoveFiltering moveFilter;
+    final private Heuristics.CoalitionReduction coalitionReduction;
 
     /**
      * Helper function to Constructors
@@ -43,12 +44,16 @@ public class Node {
      * Constructor for the root node
      * @param gameState Current game state
      * @param moveFilter move filtering heuristic
+     * @param coalitionReduction coalitionReduction heuristic
      * */
-    public Node (AIGameState gameState, Heuristics.MoveFiltering moveFilter) {
+    public Node (AIGameState gameState,
+                 Heuristics.MoveFiltering moveFilter,
+                 Heuristics.CoalitionReduction coalitionReduction) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
         this.root = this;
         this.moveFilter = moveFilter;
+        this.coalitionReduction = coalitionReduction;
 
         System.out.println("Current turn: " + this.piece);
 
@@ -72,13 +77,15 @@ public class Node {
                  Node root,
                  Node parent,
                  Move previousMove,
-                 Heuristics.MoveFiltering moveFilter) {
+                 Heuristics.MoveFiltering moveFilter,
+                 Heuristics.CoalitionReduction coalitionReduction) {
         this.gameState = gameState;
         this.root = root;
         this.parent = parent;
         this.previousMove = previousMove;
         this.children = new ConcurrentHashMap<>();
         this.moveFilter = moveFilter;
+        this.coalitionReduction = coalitionReduction;
 
 //      Win state reached (Can't expand anymore)
         if (!gameState.getWinner().isEmpty()) this.piece = parent.piece;
@@ -154,7 +161,7 @@ public class Node {
         remainingMoves.remove(nextMove);
 
         AIGameState newGameState = this.gameState.advance(nextMove);
-        Node newNode = new Node(newGameState, this.root, this, nextMove, this.moveFilter);
+        Node newNode = new Node(newGameState, this.root, this, nextMove, this.moveFilter, this.coalitionReduction);
         this.children.put(newGameState.hashCode(), newNode);
 
         return newNode;
@@ -264,7 +271,7 @@ public class Node {
         this.totalPlays += 1;
 
         //Apply Coalition Reduction
-        this.totalValue += Heuristics.CoalitionReduction.calculateValue(this.root.piece, value);
+        this.totalValue += this.coalitionReduction.calculateValue(this.root.piece, value);
 
 //      Root node
         if (this.parent == null) return value;

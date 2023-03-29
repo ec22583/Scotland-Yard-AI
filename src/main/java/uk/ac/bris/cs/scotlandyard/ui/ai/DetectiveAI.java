@@ -71,7 +71,7 @@ public class DetectiveAI implements AI{
                 new Random().nextInt(gameStates.size())
         );
 
-        this.mctsTree = new Node(randomGameState, new Heuristics.MoveFiltering());
+        this.mctsTree = new Node(randomGameState, new Heuristics.MoveFiltering(), new Heuristics.CoalitionReduction());
 
         runThreads(timeoutPair);
 

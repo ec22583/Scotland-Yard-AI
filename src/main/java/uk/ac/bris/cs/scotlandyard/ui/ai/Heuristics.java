@@ -174,19 +174,20 @@ public interface Heuristics {
      * */
     public class CoalitionReduction {
 
+        private final double r = 0.375;
         /**
          * Application of Coalition Reduction. If root piece is detective but not the value piece then
-         * give only 62.5% weighting on the value.
+         * give only (1-r) times the weighting on the value.
          *
          * @param currentPiece the root piece as used in the node data structure
          * @param value the piece to compare against the root piece
          * @returns a double giving the evaluation score for that win
          * */
-        public static double calculateValue (Piece currentPiece, Piece value) {
+        public double calculateValue (Piece currentPiece, Piece value) {
             //if MrX or a matching detective piece
             if (currentPiece.equals(value)) return 1;
             else if (currentPiece.isDetective() && value.isDetective()) {
-                return 0.625;
+                return (1 - this.r);
             }
             else return 0;
         }
