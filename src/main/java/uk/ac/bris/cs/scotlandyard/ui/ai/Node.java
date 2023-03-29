@@ -74,8 +74,8 @@ public class Node {
                 .filter(m -> m.commencedBy().equals(this.piece))
                 .toList());
 
-        this.totalValue = 0;
-        this.totalPlays = 0;
+        this.totalValue = 0.0;
+        this.totalPlays = 0.0;
     }
 
     public AIGameState getGameState () {
@@ -148,11 +148,12 @@ public class Node {
         return newNode;
     }
 
-    //Helper function
     /**
-     *
+     * Helper function to selectChild
      * @param childNode childNode to evaluate UCB on
      * @return evaluation of the UCB1 equation of the child node
+     * @throws IllegalArgumentException if child is not defined
+     * @throws IllegalArgumentException if the childNode given as parameter is not the child of the node.
      * */
     private double calculateUCB (Node childNode) {
         if (childNode == null) throw new IllegalArgumentException("Child node not defined.");
@@ -178,7 +179,11 @@ public class Node {
         return avgScore + explorationFactor;
     }
 
-    // select child based on best UCB score
+
+    /**
+     * Select child based on the best UCB score
+     * @throws IllegalStateException node has no children
+     * */
     public Node selectChild () {
         if (this.children.size() == 0) throw new IllegalStateException("Cannot select child as no children exist");
 
@@ -193,7 +198,6 @@ public class Node {
                 bestChild = child;
             }
         }
-
         return bestChild;
     }
 
@@ -201,6 +205,11 @@ public class Node {
         return !this.getGameState().getWinner().isEmpty();
     }
 
+
+    /**
+     * Extract a winner from a given gameState
+     * @throws IllegalArgumentException if given gameState is an initial game state
+     * */
     static public Optional<Piece> getGameWinner (AIGameState gameState) {
         if (gameState.getWinner().isEmpty()) return Optional.empty();
         else if (gameState.getWinner().asList().get(0).isMrX()) return Optional.of(Piece.MrX.MRX);
@@ -249,6 +258,6 @@ public class Node {
         if (this.parent == null) return value;
 
         // Upwards recursion
-            return this.parent.backPropagation(value);
+        return this.parent.backPropagation(value);
     }
 }

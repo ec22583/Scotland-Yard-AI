@@ -6,6 +6,7 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 
 import java.util.concurrent.TimeUnit;
 
+//Not to be confused with "Ai" which is implemented by MyAi
 public interface AI {
 
     /**
