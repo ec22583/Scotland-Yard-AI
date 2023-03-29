@@ -25,29 +25,6 @@ public class Node {
     final private Node root;
     final private double EXPLORATION_VALUE = 0.8;
 
-//  Used to record who has won the game.
-    public enum GameValue {
-        MRX,
-        BLUE,
-        RED,
-        GREEN,
-        YELLOW,
-        WHITE,
-        NONE;
-
-        public Optional<Piece> getWinningPiece () {
-            switch (this) {
-                case MRX ->     { return Optional.of(Piece.MrX.MRX); }
-                case BLUE ->    { return Optional.of(Piece.Detective.BLUE); }
-                case RED ->     { return Optional.of(Piece.Detective.RED); }
-                case GREEN ->   { return Optional.of(Piece.Detective.GREEN); }
-                case YELLOW ->  { return Optional.of(Piece.Detective.YELLOW);}
-                case WHITE ->   { return Optional.of(Piece.Detective.WHITE);}
-                default ->      { return Optional.empty(); }
-            }
-        }
-    }
-
     /**
      * Constructor for the root node
      * @param gameState Current game state
