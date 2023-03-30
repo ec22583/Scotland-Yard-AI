@@ -32,7 +32,7 @@ public interface Heuristics {
     /**
      * Apply rules to improve MrX's use of secret tickets (Ticket economy)
      * */
-    public class MoveFiltering {
+    class MoveFiltering {
 
         public interface FilterStrategy {
             /**
@@ -129,7 +129,7 @@ public interface Heuristics {
      * Categorize locations based on distance (max, avg) from detective and types of connections
      * a location has
      * */
-    public class LocalizationCategorization {
+    class LocalizationCategorization {
         //TODO: I have designed a framework for Localization Categorization. We need to implement the return types
         //and the actual implementation.
 
@@ -155,7 +155,7 @@ public interface Heuristics {
     /**
      * Epsilon greedy playout
      * */
-    public class EGreedyPlayouts {
+    class EGreedyPlayouts {
         //TODO: I have designed a framework for E-Greedy playouts.
 
         //For MrX
@@ -172,7 +172,7 @@ public interface Heuristics {
      * Set a value of r to ensure optimization between co-operation and independent
      * hunting of MR X
      * */
-    public class CoalitionReduction {
+    class CoalitionReduction {
 
         private final double r = 0.375;
         /**
@@ -190,6 +190,16 @@ public interface Heuristics {
                 return (1 - this.r);
             }
             else return 0;
+        }
+    }
+
+    class ExplorationCoefficient {
+        public double getMrXCoefficient () {
+            return 0.8;
+        }
+
+        public double getDetectiveCoefficient () {
+            return 3.0;
         }
     }
 

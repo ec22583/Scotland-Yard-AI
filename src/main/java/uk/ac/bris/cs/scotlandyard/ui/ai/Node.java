@@ -21,9 +21,9 @@ public class Node {
     private ConcurrentHashMap<Integer, Node> children;
     private Node parent = null;
     final private Node root;
-    final private double EXPLORATION_VALUE = 0.8;
     final private Heuristics.MoveFiltering moveFilter;
     final private Heuristics.CoalitionReduction coalitionReduction;
+    final private Heuristics.ExplorationCoefficient explorationCoefficient;
 
     /**
      * Helper function to Constructors
@@ -48,12 +48,14 @@ public class Node {
      * */
     public Node (AIGameState gameState,
                  Heuristics.MoveFiltering moveFilter,
-                 Heuristics.CoalitionReduction coalitionReduction) {
+                 Heuristics.CoalitionReduction coalitionReduction,
+                 Heuristics.ExplorationCoefficient explorationCoefficient) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
         this.root = this;
         this.moveFilter = moveFilter;
         this.coalitionReduction = coalitionReduction;
+        this.explorationCoefficient = explorationCoefficient;
 
         System.out.println("Current turn: " + this.piece);
 
@@ -78,7 +80,8 @@ public class Node {
                  Node parent,
                  Move previousMove,
                  Heuristics.MoveFiltering moveFilter,
-                 Heuristics.CoalitionReduction coalitionReduction) {
+                 Heuristics.CoalitionReduction coalitionReduction,
+                 Heuristics.ExplorationCoefficient explorationCoefficient) {
         this.gameState = gameState;
         this.root = root;
         this.parent = parent;
@@ -86,6 +89,7 @@ public class Node {
         this.children = new ConcurrentHashMap<>();
         this.moveFilter = moveFilter;
         this.coalitionReduction = coalitionReduction;
+        this.explorationCoefficient = explorationCoefficient;
 
 //      Win state reached (Can't expand anymore)
         if (!gameState.getWinner().isEmpty()) this.piece = parent.piece;
@@ -161,7 +165,15 @@ public class Node {
         remainingMoves.remove(nextMove);
 
         AIGameState newGameState = this.gameState.advance(nextMove);
-        Node newNode = new Node(newGameState, this.root, this, nextMove, this.moveFilter, this.coalitionReduction);
+        Node newNode = new Node(
+                newGameState,
+                this.root,
+                this,
+                nextMove,
+                this.moveFilter,
+                this.coalitionReduction,
+                this.explorationCoefficient
+        );
         this.children.put(newGameState.hashCode(), newNode);
 
         return newNode;
@@ -175,6 +187,10 @@ public class Node {
      * @throws IllegalArgumentException if the childNode given as parameter is not the child of the node.
      * */
     private double calculateUCB (Node childNode) {
+        double EXPLORATION_VALUE = this.root.piece.isMrX() ?
+                this.explorationCoefficient.getMrXCoefficient() :
+                this.explorationCoefficient.getDetectiveCoefficient();
+
         if (childNode == null) throw new IllegalArgumentException("Child node not defined.");
         if (!this.children.containsKey(childNode.getGameState().hashCode()))
             throw new IllegalArgumentException("Node not child of current node.");
