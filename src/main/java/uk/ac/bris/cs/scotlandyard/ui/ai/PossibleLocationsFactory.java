@@ -12,6 +12,8 @@ import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 import javax.annotation.Nonnull;
 import java.util.*;
 
+import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.MRX_LOCATIONS;
+
 public class PossibleLocationsFactory {
 
     //Thing to produce
@@ -152,10 +154,7 @@ public class PossibleLocationsFactory {
      * @return Initial Possible Locations.
      */
     public MyPossibleLocations buildFromInitialBoard (Board board) {
-        List<Integer> possibleLocations = new LinkedList<>();
-        Arrays.stream( BoardHelpers.START_LOCATIONS )
-                .forEach(l -> possibleLocations.add(l));
-
+        List<Integer> possibleLocations = new LinkedList<>(MRX_LOCATIONS);
         List<Integer> detectiveLocations = BoardHelpers.getDetectiveLocations(board);
 
         //Prune detective locations
