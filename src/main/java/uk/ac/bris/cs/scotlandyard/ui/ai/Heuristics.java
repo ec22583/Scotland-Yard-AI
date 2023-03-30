@@ -174,7 +174,7 @@ public interface Heuristics {
      * */
     class CoalitionReduction {
 
-        private final double r = 0.375;
+        private final double r = 0.5;
         /**
          * Application of Coalition Reduction. If root piece is detective but not the value piece then
          * give only (1-r) times the weighting on the value.
