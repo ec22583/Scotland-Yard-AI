@@ -3,7 +3,6 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import org.checkerframework.checker.nullness.Opt;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
 import javax.annotation.Nonnull;
@@ -65,6 +64,8 @@ public class AIGameStateFactory {
                                                       GameSetup setup,
                                                       List<LogEntry> log,
                                                       ImmutableSet<Piece> remaining){
+			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(detectives);
+
             boolean detectivesHaveMoves = false;
             for (Player detective : detectives) {
 //				If a detective and MrX in same place, detective wins.
@@ -76,7 +77,7 @@ public class AIGameStateFactory {
                             .toList());
                 }
 //				Checks if any detectives have possible moves remaining.
-                if (!MyGameState.makeSingleMoves(setup, detectives, detective, detective.location()).isEmpty()) {
+                if (!MyGameState.makeSingleMoves(setup, detectiveLocations, detective, detective.location()).isEmpty()) {
                     detectivesHaveMoves = true;
                 }
             }
@@ -94,7 +95,7 @@ public class AIGameStateFactory {
                 }
 
 //				Check MrX can move if it is his turn. If he can't then detectives win
-                if (MyGameState.makeSingleMoves(setup, detectives, mrX, mrX.location()).isEmpty()) {
+                if (MyGameState.makeSingleMoves(setup, detectiveLocations, mrX, mrX.location()).isEmpty()) {
 					return ImmutableSet.copyOf(detectives
                             .stream()
                             .map(Player::piece)
@@ -255,16 +256,16 @@ public class AIGameStateFactory {
 
 		/**
 		 * Helper method to get all moves which use a single ticket for player
-		 * @param setup Setup for the game
-		 * @param detectives List of current detective players
-		 * @param player Player to perform moves from
-		 * @param source The starting location of the player
+		 *
+		 * @param setup              Setup for the game
+		 * @param detectiveLocations List of current detective players
+		 * @param player             Player to perform moves from
+		 * @param source             The starting location of the player
 		 * @return Set of all single moves from position for the player
 		 */
-		private static Set<Move.SingleMove> makeSingleMoves(GameSetup setup, List<Player> detectives,
+		private static Set<Move.SingleMove> makeSingleMoves(GameSetup setup, List<Integer> detectiveLocations,
 															Player player, int source) {
 			Set<Move.SingleMove> moves = new HashSet<>();
-			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(detectives);
 			Map<ScotlandYard.Ticket, Integer> tickets = player.tickets();
 
 			for (int destination : setup.graph.adjacentNodes(source)) {
@@ -302,20 +303,21 @@ public class AIGameStateFactory {
 
 		/**
 		 * Finds all possible double moves for a player from current position
-		 * @param setup The setup for the game
-		 * @param detectives List of current detective players
-		 * @param player Player to check double moves for
-		 * @param source The starting location of the player
+		 *
+		 * @param setup              The setup for the game
+		 * @param detectiveLocations List of current detective players
+		 * @param player             Player to check double moves for
+		 * @param source             The starting location of the player
 		 * @return Set of all double moves possible for player
 		 */
-		private static Set<Move.DoubleMove> makeDoubleMoves(GameSetup setup, List<Player> detectives,
+		private static Set<Move.DoubleMove> makeDoubleMoves(GameSetup setup, List<Integer> detectiveLocations,
 															Player player, int source){
 			Set<Move.DoubleMove> doubleMoves = new HashSet<>();
 
 //			Only runs if player has double tickets.
 			if (player.has(ScotlandYard.Ticket.DOUBLE)) {
 //				Gets all first moves
-				Set<Move.SingleMove> singleMoves = makeSingleMoves(setup, detectives, player, source);
+				Set<Move.SingleMove> singleMoves = makeSingleMoves(setup, detectiveLocations, player, source);
 
 //				Checks all possible second moves from each first move.
 				for (Move.SingleMove singleMove : singleMoves){
@@ -325,7 +327,7 @@ public class AIGameStateFactory {
 					tempPlayer = tempPlayer.at(singleMove.destination);
 
 //					Checks for all single moves from new temp position.
-					Set<Move.SingleMove> secondMove = makeSingleMoves(setup, detectives, tempPlayer, singleMove.destination);
+					Set<Move.SingleMove> secondMove = makeSingleMoves(setup, detectiveLocations, tempPlayer, singleMove.destination);
 
 //					Attaches first move to second move to make complete double move.
 					doubleMoves.addAll(secondMove
@@ -355,6 +357,7 @@ public class AIGameStateFactory {
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
 			Set<Move> moves = new HashSet<>();
+			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(this.detectives);
 
 //			Only generate moves if no winner.
 			if (this.getWinner().isEmpty()) {
@@ -365,11 +368,11 @@ public class AIGameStateFactory {
 				);
 
 				for (Player player : players) {
-					moves.addAll(MyGameState.makeSingleMoves(this.setup, this.detectives, player, player.location()));
+					moves.addAll(MyGameState.makeSingleMoves(this.setup, detectiveLocations, player, player.location()));
 
 //					Ensures enough space left in log book for second move.
 					if (this.log.size() < (this.setup.moves.size() - 1) ){
-						moves.addAll(MyGameState.makeDoubleMoves(this.setup, this.detectives, player, player.location()));
+						moves.addAll(MyGameState.makeDoubleMoves(this.setup, detectiveLocations, player, player.location()));
 					}
 				}
 			}
@@ -428,16 +431,21 @@ public class AIGameStateFactory {
 		 * @return Set of all detective able to move
          */
         private ImmutableSet<Piece> switchToDetectivesTurn (List<Player> updatedDetectives) {
+			final List<Integer> detectiveLocations = updatedDetectives
+					.stream()
+					.map(d -> d.location())
+					.toList();
+
             ImmutableSet<Piece> pieces = ImmutableSet.copyOf(
                     this.detectives
                     .stream()
                     .filter(d -> !MyGameState.makeSingleMoves(
-                            this.setup,
-                            updatedDetectives,
-                            d,
-                            d.location()
-                        ).isEmpty()
-                    )
+							this.setup,
+							detectiveLocations,
+							d,
+							d.location())
+							.isEmpty()
+					)
                     .map(Player::piece)
                     .toList());
 
@@ -456,6 +464,10 @@ public class AIGameStateFactory {
 		 * @return New remaining set after move carried out
          * */
         private ImmutableSet<Piece> updateRemainingDetectives (Move move, List<Player> updatedDetectives){
+			final List<Integer> detectiveLocations = updatedDetectives.stream()
+					.map(d -> d.location())
+					.toList();
+
             ImmutableSet<Piece> pieces = ImmutableSet.copyOf(
                     this.remaining
                     .stream()
@@ -467,7 +479,7 @@ public class AIGameStateFactory {
 //						True if possible next moves exist for detective
                         return !MyGameState.makeSingleMoves(
                                 this.setup,
-                                updatedDetectives,
+                                detectiveLocations,
                                 optionalPlayer.get(),
                                 optionalPlayer.get().location()).isEmpty();
                     })
