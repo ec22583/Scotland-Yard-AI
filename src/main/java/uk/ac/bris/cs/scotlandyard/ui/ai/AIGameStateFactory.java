@@ -355,7 +355,8 @@ public class AIGameStateFactory {
 		@Nonnull
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
-			// Optimization (caching the moves)
+			// Optimization (caching the moves). Only needs to run the rest of the function when it's first initialized
+			// in the constructor
 			if (this.moves != null) return this.moves;
 
 			Set<Move> moves = new HashSet<>();
