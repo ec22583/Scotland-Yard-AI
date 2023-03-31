@@ -17,15 +17,6 @@ public interface PossibleLocations {
      */
     PossibleLocations updateLocations (Board board);
 
-    /**
-     * When MrX surfaces on a revealing round, clear previous possible locations and add his definite location
-     * @param  board The current game board
-     * @param  turn The turn the reveal is on
-     * @return List of length 1 of the possible locations
-     * @throws IllegalArgumentException If attempting to set a new known location on a hidden move
-     * */
-    PossibleLocations newKnownLocation (Board board, int turn);
-
     List<Integer> getLocations ();
 
     /**

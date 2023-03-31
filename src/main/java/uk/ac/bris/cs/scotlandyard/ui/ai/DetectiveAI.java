@@ -45,21 +45,22 @@ public class DetectiveAI implements AI{
         if (this.possibleLocations == null) {
             this.possibleLocations = possibleLocationsFactory.buildFromInitialBoard(board);
         }
-        //If the turn count is less than the travel log size
-        else if (this.possibleLocations.getTurn() < board.getMrXTravelLog().size()) {
-            if (board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 1).location().isPresent()) {
-                this.possibleLocations =
-                        this.possibleLocations.newKnownLocation(board, board.getMrXTravelLog().size() - 1);
-            }
-            // if it is at a revealing move
-            else if (board.getMrXTravelLog().size() > 1 && board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 2).location().isPresent()) {
-                this.possibleLocations =
-                        this.possibleLocations.newKnownLocation(board, board.getMrXTravelLog().size() - 2);
-                this.possibleLocations = this.possibleLocations.updateLocations(board);
-            } else {
-                this.possibleLocations = this.possibleLocations.updateLocations(board);
-            }
-        }
+        this.possibleLocations = this.possibleLocations.updateLocations(board);
+//        //If the turn count is less than the travel log size
+//        else if (this.possibleLocations.getTurn() < board.getMrXTravelLog().size()) {
+//            if (board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 1).location().isPresent()) {
+//                this.possibleLocations =
+//                        this.possibleLocations.newKnownLocation(board, board.getMrXTravelLog().size() - 1);
+//            }
+//            // if it is at a revealing move
+//            else if (board.getMrXTravelLog().size() > 1 && board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 2).location().isPresent()) {
+//                this.possibleLocations =
+//                        this.possibleLocations.newKnownLocation(board, board.getMrXTravelLog().size() - 2);
+//                this.possibleLocations = this.possibleLocations.updateLocations(board);
+//            } else {
+//                this.possibleLocations = this.possibleLocations.updateLocations(board);
+//            }
+//        }
 
         System.out.printf("Current locations: %s%n", this.possibleLocations.getLocations());
 
