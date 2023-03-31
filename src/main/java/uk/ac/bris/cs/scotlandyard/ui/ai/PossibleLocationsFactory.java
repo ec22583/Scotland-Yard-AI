@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import com.esotericsoftware.minlog.Log;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.EndpointPair;
@@ -97,44 +98,49 @@ public class PossibleLocationsFactory {
 
         @Override @Nonnull
         public MyPossibleLocations updateLocations (Board board) {
-            List<ScotlandYard.Ticket> mrXTickets = new ArrayList<>(2);
             if (board.getMrXTravelLog().size() - this.turn > 2){
                 throw new IllegalArgumentException("Can't go further than a double move");
             }
 
-            // if the move is a revealing turn then set current to his (MrX) new known location
-            for (int i = this.turn; i < board.getMrXTravelLog().size(); i++) {
-                mrXTickets.add(board.getMrXTravelLog().get(i).ticket());
-            }
-
             List<Integer> detectiveLocations = BoardHelpers.getDetectiveLocations(board);
-            List<Integer> newLocations = this.locations;
 
-            // Generate new possible moves based on MrX's ticket
-            // the method already filters out detective locations
-            for (ScotlandYard.Ticket ticket : mrXTickets) {
-                newLocations = this.generatePossibleNewLocations(
-                        ticket,
-                        detectiveLocations,
-                        newLocations,
-                        board.getSetup().graph
+            if (board.getMrXTravelLog().size() == this.turn) {
+//              If MrX hasn't moved, just filter out any current detective locations from possible locations.
+                return new MyPossibleLocations(
+                        this.getLocations()
+                                .stream()
+                                .filter(l -> !detectiveLocations.contains(l))
+                                .toList(),
+                        board.getMrXTravelLog().size()
                 );
+            } else {
+//              Mr X has moved, so generate new locations and filter out any which
+                List<LogEntry> logEntries = board.getMrXTravelLog()
+                        .subList(this.turn, board.getMrXTravelLog().size());
+
+                List<Integer> newLocations = this.locations
+                        .stream()
+                        .filter(l -> !detectiveLocations.contains(l))
+                        .toList();
+
+                // Generate new possible moves based on MrX's ticket
+                // the method already filters out detective locations
+                for (LogEntry logEntry : logEntries) {
+                    if (logEntry.location().isPresent()) {
+                        newLocations = new ArrayList<>(
+                                ImmutableList.of(logEntry.location().get())
+                        );
+                    } else {
+                        newLocations = this.generatePossibleNewLocations(
+                            logEntry.ticket(),
+                            detectiveLocations,
+                            newLocations,
+                            board.getSetup().graph
+                    );
+                    }
+                }
+                return new MyPossibleLocations(newLocations , board.getMrXTravelLog().size());
             }
-
-            return new MyPossibleLocations(newLocations , board.getMrXTravelLog().size());
-        }
-
-        @Override @Nonnull
-        public MyPossibleLocations newKnownLocation (Board board, int turn) {
-            LogEntry revealEntry = board.getMrXTravelLog().get(turn);
-            if (revealEntry.location().isEmpty())
-                throw new IllegalArgumentException("Trying to set new known location on hidden move");
-
-            int newTurn = turn + 1;
-            MyPossibleLocations newPossibleLocations = new MyPossibleLocations(
-                    List.of(revealEntry.location().get()), newTurn);
-
-            return newPossibleLocations;
         }
 
         @Override @Nonnull
