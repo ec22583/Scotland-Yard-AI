@@ -164,10 +164,8 @@ public class AIGameStateFactory {
 		 */
 		@Nonnull
 		private ImmutableSet<Player> getPlayerSet() {
-			Set<Player> players = new HashSet<>();
+			Set<Player> players = new HashSet<>(this.detectives);
 			players.add(this.mrX);
-			players.addAll(this.detectives);
-
 			return ImmutableSet.copyOf(players);
 		}
 
@@ -268,12 +266,13 @@ public class AIGameStateFactory {
 			Set<Move.SingleMove> moves = new HashSet<>();
 			Map<ScotlandYard.Ticket, Integer> tickets = player.tickets();
 
+			boolean hasSecretTicket = tickets.get(ScotlandYard.Ticket.SECRET) > 0;
 			for (int destination : setup.graph.adjacentNodes(source)) {
 //				If detective not already occupying destination node.
 				if (!detectiveLocations.contains(destination)) {
 
 					for (ScotlandYard.Transport t : setup.graph.edgeValueOrDefault(source, destination, ImmutableSet.of())) {
-						boolean hasSecretTicket = tickets.get(ScotlandYard.Ticket.SECRET) > 0;
+						//boolean hasSecretTicket = tickets.get(ScotlandYard.Ticket.SECRET) > 0;
 						boolean hasNonSecretTicket = tickets.get(t.requiredTicket()) > 0;
 
 // 						Adds move if player has secret ticket.
@@ -356,6 +355,9 @@ public class AIGameStateFactory {
 		@Nonnull
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
+			// Optimization (caching the moves)
+			if (this.moves != null) return this.moves;
+
 			Set<Move> moves = new HashSet<>();
 			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(this.detectives);
 
@@ -469,25 +471,28 @@ public class AIGameStateFactory {
 					.toList();
 
             ImmutableSet<Piece> pieces = ImmutableSet.copyOf(
-                    this.remaining
+                    this.getPlayerSet()
                     .stream()
-                    .filter((piece) -> !piece.equals(move.commencedBy()))
-                    .filter(d -> {
-                        Optional<Player> optionalPlayer = this.getPlayerFromPiece(d);
-                        if (optionalPlayer.isEmpty()) throw new IllegalStateException("Cannot get detective player.");
+//					Filters so only remaining players remain.
+					.filter(p -> this.remaining.contains(p.piece()))
 
-//						True if possible next moves exist for detective
+//					Filters so players who didn't move remain.
+                    .filter((p) -> !(p.piece()).equals(move.commencedBy()))
+
+//					Filters so only players who have available moves this turn remain.
+                    .filter(d -> {
+						// Check if location after making a single move is empty, then filter it out if it is
                         return !MyGameState.makeSingleMoves(
                                 this.setup,
                                 detectiveLocations,
-                                optionalPlayer.get(),
-                                optionalPlayer.get().location()).isEmpty();
+                                d,
+                                d.location()).isEmpty();
                     })
+					.map(p -> p.piece())
                     .toList());
 
-			if (pieces.isEmpty()) {
-				return ImmutableSet.of(Piece.MrX.MRX);
-			}
+			if (pieces.isEmpty()) return ImmutableSet.of(Piece.MrX.MRX);
+
 			return pieces;
         }
 
