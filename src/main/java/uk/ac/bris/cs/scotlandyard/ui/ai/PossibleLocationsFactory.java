@@ -96,6 +96,46 @@ public class PossibleLocationsFactory {
             return newLocations;
         }
 
+        @Nonnull
+        /**
+         * Helper function to updateLocations
+         * @param locations locations to filter out
+         * @param detectiveLocations detective locations to be filtered out of locations
+         * */
+        private List<Integer> filterDetectiveLocationsfromLocations(List<Integer> locations,
+                                                                    List<Integer> detectiveLocations){
+            return locations
+                    .stream()
+                    .filter((location) -> !detectiveLocations.contains(location))
+                    .toList();
+        }
+
+        @Nonnull
+        /**
+         * Generate new possible locations based on MrX's ticket (from the log entry)
+         * Clears the old possible locations if it is a revealing turn
+         * */
+        private List<Integer> newLocationsFromLogEntry (LogEntry logEntry,
+                                                        List<Integer> newLocations,
+                                                        Board board,
+                                                        List<Integer> detectiveLocations){
+            //If revealing turn
+            if (logEntry.location().isPresent()) {
+                newLocations = new ArrayList<>(
+                        ImmutableList.of( logEntry.location().get() )
+                );
+            }
+            else {
+                newLocations = this.generatePossibleNewLocations(
+                        logEntry.ticket(),
+                        detectiveLocations,
+                        newLocations,
+                        board.getSetup().graph
+                );
+            }
+            return newLocations;
+        }
+
         @Override @Nonnull
         public MyPossibleLocations updateLocations (Board board) {
             if (board.getMrXTravelLog().size() - this.turn > 2){
@@ -103,44 +143,21 @@ public class PossibleLocationsFactory {
             }
 
             List<Integer> detectiveLocations = BoardHelpers.getDetectiveLocations(board);
+            List<Integer> newLocations = filterDetectiveLocationsfromLocations(this.getLocations(), detectiveLocations);
 
             if (board.getMrXTravelLog().size() == this.turn) {
+                return new MyPossibleLocations(newLocations, board.getMrXTravelLog().size());
 //              If MrX hasn't moved, just filter out any current detective locations from possible locations.
-                return new MyPossibleLocations(
-                        this.getLocations()
-                                .stream()
-                                .filter(l -> !detectiveLocations.contains(l))
-                                .toList(),
-                        board.getMrXTravelLog().size()
-                );
-            } else {
-//              Mr X has moved, so generate new locations and filter out any which
+            }
+            else {
+//              Mr X has moved, so generate new possible locations and filter out any which detectives are in
                 List<LogEntry> logEntries = board.getMrXTravelLog()
                         .subList(this.turn, board.getMrXTravelLog().size());
-
-                List<Integer> newLocations = this.locations
-                        .stream()
-                        .filter(l -> !detectiveLocations.contains(l))
-                        .toList();
-
-                // Generate new possible moves based on MrX's ticket
-                // the method already filters out detective locations
                 for (LogEntry logEntry : logEntries) {
-                    if (logEntry.location().isPresent()) {
-                        newLocations = new ArrayList<>(
-                                ImmutableList.of(logEntry.location().get())
-                        );
-                    } else {
-                        newLocations = this.generatePossibleNewLocations(
-                            logEntry.ticket(),
-                            detectiveLocations,
-                            newLocations,
-                            board.getSetup().graph
-                    );
-                    }
+                    newLocations = newLocationsFromLogEntry(logEntry, newLocations, board, detectiveLocations);
                 }
-                return new MyPossibleLocations(newLocations , board.getMrXTravelLog().size());
             }
+            return new MyPossibleLocations(newLocations, board.getMrXTravelLog().size());
         }
 
         @Override @Nonnull
