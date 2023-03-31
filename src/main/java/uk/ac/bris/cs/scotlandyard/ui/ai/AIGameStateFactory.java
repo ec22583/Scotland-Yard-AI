@@ -359,15 +359,10 @@ public class AIGameStateFactory {
 //			Only generate moves if no winner.
 			if (this.getWinner().isEmpty()) {
 //				Converts all remaining pieces into corresponding players.
-				Set<Player> players = new HashSet<>(this.remaining.stream()
-						.map(p -> {
-							Optional<Player> temp = getPlayerFromPiece(p);
-							if (temp.isEmpty())
-								throw new IllegalStateException("Cannot match remaining piece to player");
-
-							return temp.get();
-						})
-						.toList());
+				Set<Player> players = new HashSet<>(this.getPlayerSet().stream()
+						.filter(p -> this.remaining.contains(p.piece()))
+						.toList()
+				);
 
 				for (Player player : players) {
 					moves.addAll(MyGameState.makeSingleMoves(this.setup, this.detectives, player, player.location()));
