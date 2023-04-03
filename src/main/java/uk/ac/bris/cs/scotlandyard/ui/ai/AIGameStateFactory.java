@@ -11,7 +11,7 @@ import java.util.*;
 // A factory to create game states such that the AIs can use it
 // We took this from our Cw-Model coursework (closed task) and modified it for the open task
 public class AIGameStateFactory {
-    private final class MyGameState implements AIGameState {
+    private final static class MyGameState implements AIGameState {
         final private GameSetup setup;
 		final private ImmutableSet<Piece> remaining;
 		final private ImmutableList<LogEntry> log;
@@ -291,7 +291,13 @@ public class AIGameStateFactory {
 //				If detective not already occupying destination node.
 				if (!detectiveLocations.contains(destination)) {
 
-					for (ScotlandYard.Transport t : setup.graph.edgeValueOrDefault(source, destination, ImmutableSet.of())) {
+					for (ScotlandYard.Transport t : Objects.requireNonNull(
+							setup.graph.edgeValueOrDefault(
+									source,
+									destination,
+									ImmutableSet.of()
+							)
+					)) {
 						//boolean hasSecretTicket = tickets.get(ScotlandYard.Ticket.SECRET) > 0;
 						boolean hasNonSecretTicket = tickets.get(t.requiredTicket()) > 0;
 
@@ -455,8 +461,6 @@ public class AIGameStateFactory {
 		 * @return New set of remaining players for turn after move
 		 */
         private ImmutableSet<Piece> generateNewRemaining (Move move, List<Player> updatedDetectives) {
-            ImmutableSet<Piece> newRemaining; // Sets the remaining set to the correct players.
-
             if (move.commencedBy().isMrX()) {
                 return this.switchToDetectivesTurn(updatedDetectives);
             }
@@ -478,7 +482,7 @@ public class AIGameStateFactory {
         private ImmutableSet<Piece> switchToDetectivesTurn (List<Player> updatedDetectives) {
 			final List<Integer> detectiveLocations = updatedDetectives
 					.stream()
-					.map(d -> d.location())
+					.map(Player::location)
 					.toList();
 
             ImmutableSet<Piece> pieces = ImmutableSet.copyOf(
@@ -511,7 +515,7 @@ public class AIGameStateFactory {
          * */
         private ImmutableSet<Piece> updateRemainingDetectives (Move move, List<Player> updatedDetectives){
 			final List<Integer> detectiveLocations = updatedDetectives.stream()
-					.map(d -> d.location())
+					.map(Player::location)
 					.toList();
 
             ImmutableSet<Piece> pieces = ImmutableSet.copyOf(
@@ -532,7 +536,7 @@ public class AIGameStateFactory {
                                 d,
                                 d.location()).isEmpty();
                     })
-					.map(p -> p.piece())
+					.map(Player::piece)
                     .toList());
 
 			if (pieces.isEmpty()) return ImmutableSet.of(Piece.MrX.MRX);
@@ -639,8 +643,6 @@ public class AIGameStateFactory {
      */
     public AIGameState buildMrXGameState (Board board){
         if (board.getAvailableMoves().isEmpty()) throw new IllegalArgumentException("Board already winning board");
-
-        GameSetup gameSetup = BoardHelpers.generateGameSetup(board);
         Piece mrXPiece = Piece.MrX.MRX;
 
         // Get MrX
