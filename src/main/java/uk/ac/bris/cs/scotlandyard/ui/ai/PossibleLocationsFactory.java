@@ -1,6 +1,5 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
@@ -162,18 +161,11 @@ public class PossibleLocationsFactory {
     }
 
     /**
-     * Returns the initial possible locations from the initial board state.
-     * @param board Current Game Board (must be initial board)
+     * Returns the initial possible locations for Mr X.
      * @return Initial Possible Locations.
      */
-    public MyPossibleLocations buildFromInitialBoard (Board board) {
-        Set<Integer> possibleLocations = new HashSet<>(MRX_LOCATIONS);
-        List<Integer> detectiveLocations = BoardHelpers.getDetectiveLocations(board);
-
-        //Prune detective locations
-        possibleLocations.removeAll(detectiveLocations);
-
+    public MyPossibleLocations buildInitialLocations() {
         //Make possible locations for first turn
-        return new MyPossibleLocations(possibleLocations, 0);
+        return new MyPossibleLocations(MRX_LOCATIONS, 0);
     }
 }

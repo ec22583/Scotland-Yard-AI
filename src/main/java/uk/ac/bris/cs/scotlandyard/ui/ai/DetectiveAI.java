@@ -43,7 +43,7 @@ public class DetectiveAI implements AI{
     @Override
     public Move generateBestMove(Board board, Pair<Long, TimeUnit> timeoutPair) {
         if (this.possibleLocations == null) {
-            this.possibleLocations = possibleLocationsFactory.buildFromInitialBoard(board);
+            this.possibleLocations = possibleLocationsFactory.buildInitialLocations();
         }
         this.possibleLocations = this.possibleLocations.updateLocations(board);
 //        //If the turn count is less than the travel log size
