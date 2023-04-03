@@ -57,7 +57,8 @@ public class AIGameStateFactory {
 
 
 		/**
-		 * Gets the current winners for the game state.
+		 * Generates the current winners for the game state.
+		 *
 		 * @param detectives The current detective players for the turn
 		 * @param mrX The current mrX player for the turn
 		 * @param setup The setup for the game
@@ -112,7 +113,15 @@ public class AIGameStateFactory {
 			return ImmutableSet.of();
         }
 
-		//Helper function
+		/**
+		 * Ensures that all the required parameters are not null
+		 *
+		 * @param setup Game setup
+		 * @param remaining The current remaining pieces for turn
+		 * @param mrX Mr X player
+		 * @param detectives List of detective players
+		 * @throws IllegalArgumentException if any required parameters are null
+		 */
 		private void checkParamsNotNull(final GameSetup setup,
 										final ImmutableSet<Piece> remaining,
 										final Player mrX,
@@ -137,9 +146,11 @@ public class AIGameStateFactory {
 		}
 
 		/**
-		 * Helper method. Throws errors if detectives have any illegal states. Includes checking for
-		 * illegal tickets and duplicate positions across multiple detectives. Ensures that no game
-		 * state will be created with an illegal state.
+		 * Helper method. Throws errors if detectives have any illegal states.
+		 * Includes checking for illegal tickets and duplicate positions across
+		 * multiple detectives. Ensures that no game state will be created with
+		 * an illegal state.
+		 *
 		 * @param detectives List of current detective states/players
 		 */
 		private void checkDetectives(final List<Player> detectives) {
@@ -166,7 +177,8 @@ public class AIGameStateFactory {
 
 		/**
 		 * Helper method
-		 * @return Set of all players (detectives and mrX)
+		 *
+		 * @return Set of all players in game (detectives and mrX)
 		 */
 		@Nonnull
 		private ImmutableSet<Player> getPlayerSet() {
@@ -195,6 +207,7 @@ public class AIGameStateFactory {
 
 		/**
 		 * Gets corresponding player for the piece passed in.
+		 *
 		 * @param piece Piece to get player of
 		 * @return Optional. Has value if player exists and empty if no player exists from piece.
 		 */
@@ -248,8 +261,9 @@ public class AIGameStateFactory {
 
 		/**
 		 * Helper method
+		 *
 		 * @param detectives List of detective players
-		 * @return List of location for all detectives
+		 * @return List of location for all detectives in detectives list
 		 */
 		private static List<Integer> getListOfDetectiveLocations(List<Player> detectives) {
 			return detectives
@@ -366,6 +380,7 @@ public class AIGameStateFactory {
 
 		/**
 		 * Generates all the moves that can be played by players during the turn.
+		 *
 		 * @param detectives List of all detective players
 		 * @param mrX Mr X player
 		 * @param remaining Set of all remaining pieces for turn
@@ -407,7 +422,8 @@ public class AIGameStateFactory {
 		}
 
 		/**
-		 * Updates the current log book with a new log book with updated moves
+		 * Updates the current log book with a new log book with current move appended.
+		 *
 		 * @param move Move to be carried out
 		 * @return New log book with new log entry for move (if commenced by mrX)
 		 */
@@ -433,7 +449,8 @@ public class AIGameStateFactory {
 		}
 
 		/**
-		 * Updates remaining set to new set of remaining players after move is carried out
+		 * Updates remaining set to new set of remaining players after move is carried out.
+		 *
 		 * @param move The move to be carried out
 		 * @return New set of remaining players for turn after move
 		 */
@@ -455,6 +472,7 @@ public class AIGameStateFactory {
 
 		/**
          * Switches from mrX's turn to detective turn.
+		 *
 		 * @return Set of all detective able to move
          */
         private ImmutableSet<Piece> switchToDetectivesTurn (List<Player> updatedDetectives) {
@@ -484,8 +502,9 @@ public class AIGameStateFactory {
         }
 
 		/**
-         * Updates remaining detectives to new set of remaining detectives after move and if detectives are unable
-		 * to move for any reason
+         * Updates remaining detectives to new set of remaining detectives after move and
+		 * filters out detectives unable to move for any reason
+		 *
          * @param move Move used this turn
          * @param updatedDetectives List of new detectives after move carried out
 		 * @return New remaining set after move carried out
@@ -522,7 +541,9 @@ public class AIGameStateFactory {
         }
 
 		/**
-		 * Generates new detective players
+		 * Generates new detective players once Mr X has moved.
+		 * Filters out detectives unable to move for any reason.
+		 *
 		 * @param player Player who carried out the turn
 		 * @param singleTickets Tickets used for move
 		 * @param newDestination New location of player
@@ -551,7 +572,8 @@ public class AIGameStateFactory {
 		}
 
 		/**
-		 * Generates new mrX from after move is carried out
+		 * Generates new mrX after move is carried out.
+		 *
 		 * @param player Player who moved
 		 * @param singleTickets Tickets used in move
 		 * @param newDestination New location of player
@@ -609,7 +631,8 @@ public class AIGameStateFactory {
     }
 
     /**
-     * Build a game state for Mr X
+     * Build a game state for Mr X AI.
+	 *
      * @param board The current board for the game state
      * @return a New Game-state replicating the game that MrX can use directly
      * @throws IllegalArgumentException if the board is already a winning state
@@ -638,7 +661,8 @@ public class AIGameStateFactory {
     }
 
     /**
-     * Build a game state for Detectives
+     * Build all possible game states for detective AI.
+	 *
      * @param board Current game state from game
      * @param possibleLocations List of possible locations that MrX could be in
      * @return A list of GameStates for each detective respectively
