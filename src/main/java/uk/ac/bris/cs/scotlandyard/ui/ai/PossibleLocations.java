@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import com.google.common.collect.ImmutableSet;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 
 import javax.annotation.Nonnull;
@@ -17,7 +18,7 @@ public interface PossibleLocations {
      */
     PossibleLocations updateLocations (Board board);
 
-    List<Integer> getLocations ();
+    ImmutableSet<Integer> getLocations ();
 
     /**
      * Gets the current turn from the class.

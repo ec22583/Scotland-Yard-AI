@@ -1,11 +1,9 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
-import com.esotericsoftware.minlog.Log;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
-import jakarta.websocket.Endpoint;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.LogEntry;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
@@ -20,11 +18,11 @@ public class PossibleLocationsFactory {
     //Thing to produce
     private final class MyPossibleLocations implements PossibleLocations {
 
-        private final List<Integer> locations;
+        private final ImmutableSet<Integer> locations;
         private final int turn;
 
         public MyPossibleLocations(Collection<Integer> locations, int turn){
-            this.locations = ImmutableList.copyOf(locations);
+            this.locations = ImmutableSet.copyOf(locations);
             this.turn = turn;
         }
 
@@ -37,7 +35,7 @@ public class PossibleLocationsFactory {
          * @return a predicate whether the edge uses that ticket type
          * @throws IllegalStateException if the edge doesn't exist
          * */
-        private boolean checkEdgeUsesTicket (EndpointPair<Integer> edge,
+        private static boolean checkEdgeUsesTicket (EndpointPair<Integer> edge,
                                                  ScotlandYard.Ticket usedTicket,
                                                  ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph){
             //Extract type of transport that is used to go to the edge
@@ -64,36 +62,31 @@ public class PossibleLocationsFactory {
          * @param graph Graph of the game
          * @return updated list of possible locations of MrX
          * */
-        private List<Integer> generatePossibleNewLocations (
+        private static ImmutableSet<Integer> generatePossibleNewLocations (
                 ScotlandYard.Ticket usedTicket,
-                List<Integer> detectiveLocations,
-                List<Integer> oldPossibleLocations,
+                Collection<Integer> detectiveLocations,
+                Collection<Integer> oldPossibleLocations,
                 ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph) {
-            List<Integer> newLocations = new LinkedList<>();
+            Set<Integer> newLocations = new HashSet<>();
 
             for (int oldPossibleLocation : oldPossibleLocations) {
-                Set<EndpointPair<Integer>> edges = graph.incidentEdges(oldPossibleLocation);
-                Set<EndpointPair<Integer>> possibleLocations;
-                if (usedTicket.equals(ScotlandYard.Ticket.SECRET)) {
-                    possibleLocations = ImmutableSet.copyOf(edges); //Anywhere can be accessed using secret tickets
-                }
-                else {
-                    possibleLocations = ImmutableSet.copyOf(edges
-                            .stream()
-                            .filter(edge -> checkEdgeUsesTicket(edge, usedTicket, graph))
-                            .toList()
-                    );
-                }
-
-                newLocations.addAll(possibleLocations
+                newLocations.addAll(
+//              Gets all edges which connect to the current oldPossibleLocation.
+                        graph.incidentEdges(oldPossibleLocation)
                         .stream()
-                        // Adjacent node from old possible locations
+
+//                      Filters edges so only the ones which use the correct ticket are included
+                        .filter(edge -> usedTicket.equals(ScotlandYard.Ticket.SECRET) ||
+                                checkEdgeUsesTicket(edge, usedTicket, graph))
+
+//                      Gets the new locations from the edge and old location.
                         .map(edge -> edge.adjacentNode(oldPossibleLocation))
+
                         //Prune all possible locations that detectives are in
                         .filter(l -> !detectiveLocations.contains(l))
                         .toList());
             }
-            return newLocations;
+            return ImmutableSet.copyOf(newLocations);
         }
 
         @Nonnull
@@ -102,12 +95,12 @@ public class PossibleLocationsFactory {
          * @param locations locations to filter out
          * @param detectiveLocations detective locations to be filtered out of locations
          * */
-        private List<Integer> filterDetectiveLocationsfromLocations(List<Integer> locations,
-                                                                    List<Integer> detectiveLocations){
-            return locations
+        private static ImmutableSet<Integer> filterDetectiveLocationsFromLocations(Collection<Integer> locations,
+                                                                    Collection<Integer> detectiveLocations){
+            return ImmutableSet.copyOf(locations
                     .stream()
                     .filter((location) -> !detectiveLocations.contains(location))
-                    .toList();
+                    .toList());
         }
 
         @Nonnull
@@ -115,25 +108,22 @@ public class PossibleLocationsFactory {
          * Generate new possible locations based on MrX's ticket (from the log entry)
          * Clears the old possible locations if it is a revealing turn
          * */
-        private List<Integer> newLocationsFromLogEntry (LogEntry logEntry,
-                                                        List<Integer> newLocations,
+        private ImmutableSet<Integer> newLocationsFromLogEntry (LogEntry logEntry,
+                                                        Collection<Integer> newLocations,
                                                         Board board,
                                                         List<Integer> detectiveLocations){
             //If revealing turn
             if (logEntry.location().isPresent()) {
-                newLocations = new ArrayList<>(
-                        ImmutableList.of( logEntry.location().get() )
-                );
+                return ImmutableSet.of(logEntry.location().get());
             }
             else {
-                newLocations = this.generatePossibleNewLocations(
+                return this.generatePossibleNewLocations(
                         logEntry.ticket(),
                         detectiveLocations,
                         newLocations,
                         board.getSetup().graph
                 );
             }
-            return newLocations;
         }
 
         @Override @Nonnull
@@ -143,7 +133,7 @@ public class PossibleLocationsFactory {
             }
 
             List<Integer> detectiveLocations = BoardHelpers.getDetectiveLocations(board);
-            List<Integer> newLocations = filterDetectiveLocationsfromLocations(this.getLocations(), detectiveLocations);
+            Set<Integer> newLocations = filterDetectiveLocationsFromLocations(this.getLocations(), detectiveLocations);
 
             if (board.getMrXTravelLog().size() == this.turn) {
                 return new MyPossibleLocations(newLocations, board.getMrXTravelLog().size());
@@ -165,8 +155,8 @@ public class PossibleLocationsFactory {
             return this.turn;
         }
 
-        public ImmutableList<Integer> getLocations () {
-            return ImmutableList.copyOf(this.locations);
+        public ImmutableSet<Integer> getLocations () {
+            return this.locations;
         }
 
     }
@@ -177,7 +167,7 @@ public class PossibleLocationsFactory {
      * @return Initial Possible Locations.
      */
     public MyPossibleLocations buildFromInitialBoard (Board board) {
-        List<Integer> possibleLocations = new LinkedList<>(MRX_LOCATIONS);
+        Set<Integer> possibleLocations = new HashSet<>(MRX_LOCATIONS);
         List<Integer> detectiveLocations = BoardHelpers.getDetectiveLocations(board);
 
         //Prune detective locations
