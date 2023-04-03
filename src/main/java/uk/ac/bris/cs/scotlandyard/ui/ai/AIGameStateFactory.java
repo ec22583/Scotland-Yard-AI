@@ -38,14 +38,20 @@ public class AIGameStateFactory {
 			this.detectives = detectives;
 			this.previousMove = previousMove;
 
-			ImmutableSet<Piece> winnerSet = MyGameState.getWinners(
+			this.winner = MyGameState.getWinners(
 					this.detectives,
 					this.mrX,
 					this.setup,
 					this.log,
 					this.remaining);
-			this.winner = ImmutableSet.copyOf(winnerSet);
-			this.moves = this.getAvailableMoves();
+			this.moves = MyGameState.generateAvailableMoves(
+					this.detectives,
+					this.mrX,
+					this.remaining,
+					this.winner,
+					this.log,
+					this.setup
+			);
 
 		}
 
@@ -355,27 +361,45 @@ public class AIGameStateFactory {
 		@Nonnull
 		@Override
 		public ImmutableSet<Move> getAvailableMoves() {
-			// Optimization (caching the moves). Only needs to run the rest of the function when it's first initialized
-			// in the constructor
-			if (this.moves != null) return this.moves;
+			return this.moves;
+		}
 
+		/**
+		 * Generates all the moves that can be played by players during the turn.
+		 * @param detectives List of all detective players
+		 * @param mrX Mr X player
+		 * @param remaining Set of all remaining pieces for turn
+		 * @param winners Set of all winning pieces for turn
+		 * @param log Mr X log for game
+		 * @param setup Game setup for game
+		 * @return ImmutableSet of all possible moves which can be made.
+		 */
+		private static ImmutableSet<Move> generateAvailableMoves(List<Player> detectives,
+																 Player mrX,
+																 Set<Piece> remaining,
+																 Set<Piece> winners,
+																 List<LogEntry> log,
+																 GameSetup setup) {
 			Set<Move> moves = new HashSet<>();
-			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(this.detectives);
+			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(detectives);
 
 //			Only generate moves if no winner.
-			if (this.getWinner().isEmpty()) {
+			if (winners.isEmpty()) {
+				List<Player> playerList = new ArrayList<>(detectives.size() + 1);
+				playerList.addAll(detectives);
+				playerList.add(mrX);
+
 //				Converts all remaining pieces into corresponding players.
-				Set<Player> players = new HashSet<>(this.getPlayerSet().stream()
-						.filter(p -> this.remaining.contains(p.piece()))
-						.toList()
-				);
+				List<Player> players = playerList.stream()
+						.filter(p -> remaining.contains(p.piece()))
+						.toList();
 
 				for (Player player : players) {
-					moves.addAll(MyGameState.makeSingleMoves(this.setup, detectiveLocations, player, player.location()));
+					moves.addAll(MyGameState.makeSingleMoves(setup, detectiveLocations, player, player.location()));
 
 //					Ensures enough space left in log book for second move.
-					if (this.log.size() < (this.setup.moves.size() - 1) ){
-						moves.addAll(MyGameState.makeDoubleMoves(this.setup, detectiveLocations, player, player.location()));
+					if (log.size() < (setup.moves.size() - 1) ){
+						moves.addAll(MyGameState.makeDoubleMoves(setup, detectiveLocations, player, player.location()));
 					}
 				}
 			}
