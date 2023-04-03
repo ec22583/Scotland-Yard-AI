@@ -701,4 +701,26 @@ public class AIGameStateFactory {
         }
         return gameStates;
     }
+
+		/**
+	 * Builds the initial game state for the game
+	 * @param setup the game setup
+	 * @param mrX MrX player
+	 * @param detectives detective players
+	 * @return Initial game state for game
+	 */
+	@Nonnull
+	public Board.GameState build(
+			GameSetup setup,
+			Player mrX,
+			ImmutableList<Player> detectives) {
+
+		return new MyGameState(
+				setup,
+				ImmutableSet.of(Piece.MrX.MRX),
+				ImmutableList.of(),
+				mrX,
+				detectives,
+				null);
+	}
 }
