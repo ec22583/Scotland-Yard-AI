@@ -14,7 +14,8 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 
 public class MyAi implements Ai {
 	private MrXAI mrXAI;
-	private DetectiveAI detectiveAI; //for later TODO
+	private DetectiveAI detectiveAI;
+
 	public void onStart() {
 		this.mrXAI = new MrXAI();
 		this.detectiveAI = new DetectiveAI();
