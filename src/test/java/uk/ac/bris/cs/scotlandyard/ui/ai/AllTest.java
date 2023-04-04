@@ -13,7 +13,6 @@ Adapted for use in the open task.
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        DummyTest.class,
         BoardHelpersTest.class,
         PossibleLocationsTest.class
 })
