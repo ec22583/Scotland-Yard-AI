@@ -262,8 +262,8 @@ public class Node {
         AIGameState currentGameState = this.gameState;
 
         //Anchor case
-        if (this.getGameWinner(currentGameState).isPresent())
-            return this.getGameWinner(currentGameState).get();
+        if (Node.getGameWinner(currentGameState).isPresent())
+            return Node.getGameWinner(currentGameState).get();
 
         while (currentGameState.getWinner().isEmpty()) {
             Move randomMove = currentGameState.getAvailableMoves()

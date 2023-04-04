@@ -116,7 +116,7 @@ public class PossibleLocationsFactory {
                 return ImmutableSet.of(logEntry.location().get());
             }
             else {
-                return this.generatePossibleNewLocations(
+                return MyPossibleLocations.generatePossibleNewLocations(
                         logEntry.ticket(),
                         detectiveLocations,
                         newLocations,
