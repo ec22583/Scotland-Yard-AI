@@ -97,4 +97,5 @@ public class BoardHelpersTest extends AITestBase {
         assertThat(detectiveLocations)
                 .contains(48,49,50,51,52);
     }
+
 }
