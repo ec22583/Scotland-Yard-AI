@@ -19,6 +19,7 @@ public class MyAi implements Ai {
 	public void onStart() {
 		this.mrXAI = new MrXAI();
 		this.detectiveAI = new DetectiveAI();
+//		PrecalculateDistances.main();
 	}
 
 	@Nonnull @Override
