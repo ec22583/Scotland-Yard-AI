@@ -89,7 +89,7 @@ public interface Heuristics {
 
                 // if it isn't (both a secret ticket and all the edges use taxi tickets)
                 return !(tickets.contains(ScotlandYard.Ticket.SECRET) &&
-                        edges
+                        (edges
                         .stream()
                         .parallel()
                         .allMatch(e -> {
@@ -97,7 +97,7 @@ public interface Heuristics {
                             if (optionalTransports.isEmpty())
                                 throw new IllegalArgumentException("Cannot find edge on graph");
                             return (optionalTransports.get().contains(ScotlandYard.Transport.TAXI));
-                        }));
+                        })));
             }
         }
 
