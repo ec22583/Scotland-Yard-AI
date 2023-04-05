@@ -64,11 +64,12 @@ public interface Heuristics {
                 if (tickets.contains(ScotlandYard.Ticket.SECRET) && gameState
                         .getSetup()
                         .moves
-                        .get(gameState.getMrXTravelLog().size())
+                        .get(gameState.getMrXTravelLog().size() - 1) // get starts at index 0
                         .equals(true)
                         ) {
                     return false;
-                } else {
+                }
+                else {
                     return true;
                 }
             }
@@ -105,6 +106,10 @@ public interface Heuristics {
                 new RemoveFromRevealingRound(),
                 new AllPossibleLocationsHaveTaxis()
         );
+
+        public List<FilterStrategy> getFilterStrategies() {
+            return filterStrategies;
+        }
 
         /**
          *

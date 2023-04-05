@@ -14,6 +14,7 @@ Adapted for use in the open task.
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
         BoardHelpersTest.class,
-        PossibleLocationsTest.class
+        PossibleLocationsTest.class,
+        HeuristicsTest.class
 })
 public class AllTest {}

@@ -8,7 +8,9 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 @SuppressWarnings("ALL")
-//Series of Helper functions for the Board used in multiple class files
+/**
+ * Series of Helper functions for the Board used in multiple class files
+ * */
 public interface BoardHelpers {
 
     /**

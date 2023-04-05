@@ -18,12 +18,15 @@ import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.readGraph;
 public class AITestBase {
     private static MyGameStateFactory gameStateFactory;
     private static PossibleLocationsFactory possibleLocationsFactory;
+
+    private static AIGameStateFactory aiGameStateFactory;
     private static ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> defaultGraph;
 
     @BeforeClass
     public static void setUp () {
         possibleLocationsFactory = new PossibleLocationsFactory();
         gameStateFactory = new MyGameStateFactory();
+        aiGameStateFactory = new AIGameStateFactory();
 
         try {
 			defaultGraph = readGraph(Resources.toString(Resources.getResource(
@@ -40,6 +43,9 @@ public class AITestBase {
         return possibleLocationsFactory;
     }
 
+    public static AIGameStateFactory aiGameStateFactory () {
+        return aiGameStateFactory;
+    }
     /**
 	 * @return the default graph used in the actual game
 	 */
