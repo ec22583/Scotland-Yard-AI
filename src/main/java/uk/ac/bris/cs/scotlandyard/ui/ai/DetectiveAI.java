@@ -1,20 +1,25 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import com.google.common.collect.ImmutableTable;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
+import uk.ac.bris.cs.scotlandyard.model.Player;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class DetectiveAI implements AI{
     private PossibleLocations possibleLocations;
     final private AIGameStateFactory aiGameStateFactory;
     final private PossibleLocationsFactory possibleLocationsFactory;
+    final private ImmutableTable<Integer, Integer, Integer> distances;
     private Node mctsTree;
 
-    public DetectiveAI () {
+    public DetectiveAI (ImmutableTable<Integer, Integer, Integer> distances) {
+        this.distances = distances;
         this.aiGameStateFactory = new AIGameStateFactory();
         this.possibleLocationsFactory = new PossibleLocationsFactory();
     }
@@ -46,34 +51,36 @@ public class DetectiveAI implements AI{
             this.possibleLocations = possibleLocationsFactory.buildInitialLocations();
         }
         this.possibleLocations = this.possibleLocations.updateLocations(board);
-//        //If the turn count is less than the travel log size
-//        else if (this.possibleLocations.getTurn() < board.getMrXTravelLog().size()) {
-//            if (board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 1).location().isPresent()) {
-//                this.possibleLocations =
-//                        this.possibleLocations.newKnownLocation(board, board.getMrXTravelLog().size() - 1);
-//            }
-//            // if it is at a revealing move
-//            else if (board.getMrXTravelLog().size() > 1 && board.getMrXTravelLog().get(board.getMrXTravelLog().size() - 2).location().isPresent()) {
-//                this.possibleLocations =
-//                        this.possibleLocations.newKnownLocation(board, board.getMrXTravelLog().size() - 2);
-//                this.possibleLocations = this.possibleLocations.updateLocations(board);
-//            } else {
-//                this.possibleLocations = this.possibleLocations.updateLocations(board);
-//            }
-//        }
 
         System.out.printf("Current locations: %s%n", this.possibleLocations.getLocations());
 
-        List<AIGameState> gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
+        List<Pair<AIGameState, Integer>> gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
 //      Remove any already winning game states since they are not possible.
-        gameStates = gameStates.stream().filter(s -> s.getWinner().isEmpty()).toList();
+        gameStates = gameStates.stream().filter(s -> s.left().getWinner().isEmpty()).toList();
 
-        AIGameState randomGameState = gameStates.get(
-                new Random().nextInt(gameStates.size())
-        );
+        Pair<AIGameState, Integer> possibleGameState = null;
+        double averageDistance = Integer.MIN_VALUE;
+        for (Pair<AIGameState, Integer> gameStatePair : gameStates) {
+            List<Integer> detectiveLocations = gameStatePair.left().getDetectiveLocations();
+             double currentAverageDistance = detectiveLocations
+                     .stream()
+                     .map(l -> distances.get(l, gameStatePair.right()))
+                     .mapToInt(Integer::intValue)
+                     .average()
+                     .orElseThrow();
+
+             if (currentAverageDistance > averageDistance) {
+                 averageDistance = currentAverageDistance;
+                 possibleGameState = gameStatePair;
+             }
+        }
+
+//        AIGameState randomGameState = gameStates.get(
+//                new Random().nextInt(gameStates.size())
+//        ).left();
 
         this.mctsTree = new Node(
-                randomGameState,
+                possibleGameState.left(),
                 new Heuristics.MoveFiltering(),
                 new Heuristics.CoalitionReduction(),
                 new Heuristics.ExplorationCoefficient()

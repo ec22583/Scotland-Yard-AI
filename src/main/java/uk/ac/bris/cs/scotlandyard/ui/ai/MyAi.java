@@ -25,11 +25,12 @@ import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 public class MyAi implements Ai {
 	private MrXAI mrXAI;
 	private DetectiveAI detectiveAI;
+	private ImmutableTable<Integer, Integer, Integer> distances;
 
 	public void onStart() {
+		this.distances = this.readDistances();
 		this.mrXAI = new MrXAI();
-		this.detectiveAI = new DetectiveAI();
-		this.readDistances();
+		this.detectiveAI = new DetectiveAI(this.distances);
 //		PrecalculateDistances.main();
 	}
 

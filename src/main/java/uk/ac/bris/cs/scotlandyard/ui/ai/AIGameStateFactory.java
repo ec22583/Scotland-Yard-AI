@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
 import javax.annotation.Nonnull;
@@ -270,6 +271,15 @@ public class AIGameStateFactory {
 					.stream()
 					.map(Player::location)
 					.toList();
+		}
+
+		/**
+		 * Extra added method to help average distance calculations.
+		 *
+		 * @return List of all the locations for the detectives.
+		 */
+		public List<Integer> getDetectiveLocations () {
+			return getListOfDetectiveLocations(detectives);
 		}
 
 		/**
@@ -669,8 +679,8 @@ public class AIGameStateFactory {
      * @param possibleLocations List of possible locations that MrX could be in
      * @return A list of GameStates for each detective respectively
      */
-    public List<AIGameState> buildDetectiveGameStates (Board board, PossibleLocations possibleLocations) {
-        List<AIGameState> gameStates = new ArrayList<>(possibleLocations.getLocations().size());
+    public List<Pair<AIGameState, Integer>> buildDetectiveGameStates (Board board, PossibleLocations possibleLocations) {
+        List<Pair<AIGameState, Integer>> gameStates = new ArrayList<>(possibleLocations.getLocations().size());
 		final ImmutableList<Player> detectives = BoardHelpers.getDetectives(board);
 		List<Piece> remaining = new ArrayList<>(detectives.size());
 
@@ -689,16 +699,20 @@ public class AIGameStateFactory {
             );
 
             gameStates.add(
-                    new MyGameState(
-                            board.getSetup(),
-                            ImmutableSet.copyOf(remaining),
-                            board.getMrXTravelLog(),
-                            mrX,
-                            detectives,
-							null
-                    )
-            );
+					new Pair<>(
+							new MyGameState(
+								board.getSetup(),
+								ImmutableSet.copyOf(remaining),
+								board.getMrXTravelLog(),
+								mrX,
+								detectives,
+								null
+							),
+							possibleLocation
+					)
+			);
         }
+
         return gameStates;
     }
 
