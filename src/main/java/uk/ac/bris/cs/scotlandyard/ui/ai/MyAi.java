@@ -81,12 +81,12 @@ public class MyAi implements Ai {
 			}
 			ImmutableTable<Integer, Integer, Integer> distances = builder.build();
 			System.out.println(distances);
+			return distances;
 		} catch (IOException e) {
 			System.err.println("Cannot read from distances.txt");
 			System.exit(1);
+			return null;
 		}
-
-		return null;
 	}
 
 	public void onTerminate() {}
