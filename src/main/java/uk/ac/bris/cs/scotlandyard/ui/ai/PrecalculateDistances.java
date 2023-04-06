@@ -6,6 +6,8 @@ import com.google.common.graph.ImmutableValueGraph;
 import com.google.common.io.Resources;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -45,7 +47,7 @@ public class PrecalculateDistances {
         }
     }
 
-    public void run () {
+    public void run () throws IOException {
         //Iterate through each row (represents a node and distance to all other nodes)
         for (int startPosition : distances.rowKeySet()) {
             Map<Integer, Integer> row = distances.row(startPosition);
@@ -58,6 +60,20 @@ public class PrecalculateDistances {
 
         System.out.println(distances.values());
         System.out.println("Finished running epic dijkstra's");
+
+        FileWriter fileWriter = new FileWriter("./distances.txt");
+
+        distances.rowMap().forEach((rowKey, columnSet) -> {
+            columnSet.forEach((columnKey, distance) -> {
+                try {
+                    fileWriter.append(String.format("%s,%s,%s\n", rowKey, columnKey, distance));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        });
+
+        fileWriter.close();
     }
 
     public void dijkstras (int startPosition, Map<Integer, Integer> row) {
@@ -104,6 +120,11 @@ public class PrecalculateDistances {
 
     public static void main () {
         PrecalculateDistances precalculateDistances = new PrecalculateDistances();
-        precalculateDistances.run();
+        try {
+         precalculateDistances.run();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
     }
 }
