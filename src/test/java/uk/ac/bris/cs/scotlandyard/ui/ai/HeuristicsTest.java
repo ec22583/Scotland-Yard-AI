@@ -48,12 +48,13 @@ public class HeuristicsTest extends AITestBase {
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
         AIGameState detectiveGameState = aiGameStateFactory()
-                .buildDetectiveGameStates(gameState, possibleLocations).get(0);
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
 
         //Create relevant filter to test
         Heuristics.MoveFiltering heuristic =
                 new Heuristics.MoveFiltering();
-        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies()).get(0);
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.REMOVE_FROM_FIRST_TWO_ROUNDS);
 
         //if it is a secret move then it should fail the filter
         assertThat(testFilter.execute(secretMove, detectiveGameState))
@@ -98,12 +99,13 @@ public class HeuristicsTest extends AITestBase {
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
         AIGameState detectiveGameState = aiGameStateFactory()
-                .buildDetectiveGameStates(gameState, possibleLocations).get(0);
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
 
         //Create relevant filter to test
         Heuristics.MoveFiltering heuristic =
                 new Heuristics.MoveFiltering();
-        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies()).get(0);
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.REMOVE_FROM_FIRST_TWO_ROUNDS);
 
         //if it is a secret move then it should fail the filter
         assertThat(testFilter.execute(secretMove, detectiveGameState))
@@ -157,12 +159,13 @@ public class HeuristicsTest extends AITestBase {
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
         AIGameState detectiveGameState = aiGameStateFactory()
-                .buildDetectiveGameStates(gameState, possibleLocations).get(0);
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
 
         //Create relevant filter to test
         Heuristics.MoveFiltering heuristic =
                 new Heuristics.MoveFiltering();
-        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies()).get(0);
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.REMOVE_FROM_FIRST_TWO_ROUNDS);
 
         //if it is a secret move then it should pass the filter because it is turn 3
         assertThat(testFilter.execute(secretMove, detectiveGameState))
@@ -216,7 +219,7 @@ public class HeuristicsTest extends AITestBase {
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
         AIGameState detectiveGameState = aiGameStateFactory()
-                .buildDetectiveGameStates(gameState, possibleLocations).get(0);
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
 
         assertThat(detectiveGameState
                 .getSetup()
@@ -228,7 +231,8 @@ public class HeuristicsTest extends AITestBase {
         //Create relevant filter to test (Filter secret move at a reavealing round)
         Heuristics.MoveFiltering heuristic =
                 new Heuristics.MoveFiltering();
-        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies()).get(1);
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.REMOVE_FROM_REVEALING_ROUND);
 
         //if it is a secret move then it should fail the filter because it is turn 3 (revealing round)
         assertThat(testFilter.execute(secretMove, detectiveGameState))
@@ -264,12 +268,13 @@ public class HeuristicsTest extends AITestBase {
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
         AIGameState detectiveGameState = aiGameStateFactory()
-                .buildDetectiveGameStates(gameState, possibleLocations).get(0);
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
 
         //Create relevant filter to test
         Heuristics.MoveFiltering heuristic =
                 new Heuristics.MoveFiltering();
-        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies()).get(1);
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.REMOVE_FROM_REVEALING_ROUND);
 
         //if it is a secret move then it should pass the filter (it isn't a revealing round)
         assertThat(testFilter.execute(secretMove, detectiveGameState))
@@ -305,12 +310,13 @@ public class HeuristicsTest extends AITestBase {
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
         AIGameState detectiveGameState = aiGameStateFactory()
-                .buildDetectiveGameStates(gameState, possibleLocations).get(0);
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
 
         //Create relevant filter to test
         Heuristics.MoveFiltering heuristic =
                 new Heuristics.MoveFiltering();
-        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies()).get(2);
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.ALL_POSSIBLE_LOCATIONS_HAVE_TAXIS);
 
         //if it is a secret move then it should fail the filter (all adjacent locations can be accesed via taxi)
         assertThat(testFilter.execute(secretMove, detectiveGameState))
@@ -346,12 +352,13 @@ public class HeuristicsTest extends AITestBase {
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
         AIGameState detectiveGameState = aiGameStateFactory()
-                .buildDetectiveGameStates(gameState, possibleLocations).get(0);
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
 
         //Create relevant filter to test
         Heuristics.MoveFiltering heuristic =
                 new Heuristics.MoveFiltering();
-        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies()).get(2);
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.ALL_POSSIBLE_LOCATIONS_HAVE_TAXIS);
 
 
         ImmutableValueGraph<Integer, ImmutableSet<Transport>> graph =

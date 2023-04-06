@@ -17,22 +17,15 @@ import java.util.Set;
 //Wrapper class for all Heuristics (interfaces)
 public interface Heuristics {
 
-    /**
-     * Create a pre-computed distance table from every node to every node
-     * such that this table will have a lookup time of O(1) time.
-     *
-     * This distance table is naive and does not consider positioning of other
-     * players blocking the path of a shortest path.
-     * Used in localization categorization and E-greedy playouts.
-     * */
-//    public void createDijkstraDistanceTable(){
-//
-//    }
 
     /**
      * Apply rules to improve MrX's use of secret tickets (Ticket economy)
      * */
     class MoveFiltering {
+
+        public final int REMOVE_FROM_FIRST_TWO_ROUNDS = 0;
+        public final int REMOVE_FROM_REVEALING_ROUND = 1;
+        public final int ALL_POSSIBLE_LOCATIONS_HAVE_TAXIS = 2;
 
         public interface FilterStrategy {
             /**
@@ -130,6 +123,7 @@ public interface Heuristics {
         }
     }
 
+
     /**
      * Categorize locations based on distance (max, avg) from detective and types of connections
      * a location has
@@ -168,6 +162,7 @@ public interface Heuristics {
 
         }
 
+        //For Detective
         public void minimizeMrXDistance(){
 
         }
