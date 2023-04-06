@@ -69,7 +69,7 @@ public class MyAi implements Ai {
 			for (int i = 0; i < distanceStrings.length; i++) {
 				String distanceString = distanceStrings[i];
 
-				List<Integer> distance = Arrays.stream(distanceStrings[i].split(","))
+				List<Integer> distance = Arrays.stream(distanceString.split(","))
 						.map(Integer::valueOf).toList();
 				if (distance.size() != 3) throw new IllegalStateException(
 						"distances.txt not in correct format: Must be comma separated list of 3 items\n" +
