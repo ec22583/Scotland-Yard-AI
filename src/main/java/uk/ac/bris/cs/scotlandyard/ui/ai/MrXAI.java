@@ -17,10 +17,13 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 // Separate AI Entity Behaviour
 public class MrXAI implements AI {
     private AIGameStateFactory aiGameStateFactory;
-    Node mctsTree;
+    private PossibleLocations possibleLocations;
+    private PossibleLocationsFactory possibleLocationsFactory;
+    private Node mctsTree;
 
     public MrXAI () {
         this.aiGameStateFactory = new AIGameStateFactory();
+        this.possibleLocationsFactory = new PossibleLocationsFactory();
     }
 
     //Helper function of generateBestMove
@@ -45,13 +48,20 @@ public class MrXAI implements AI {
 
     //Evaluate the Best move from a Game tree
     public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
+        if (this.possibleLocations == null) {
+            this.possibleLocations = possibleLocationsFactory.buildInitialLocations();
+        }
+        this.possibleLocations = this.possibleLocations.updateLocations(board);
+
         AIGameState gameState = this.aiGameStateFactory.buildMrXGameState(board);
 
         this.mctsTree = new Node(
                 gameState,
+                this.possibleLocations,
                 new Heuristics.MoveFiltering(),
                 new Heuristics.CoalitionReduction(),
-                new Heuristics.ExplorationCoefficient()
+                new Heuristics.ExplorationCoefficient(),
+                new Heuristics.EGreedyPlayouts()
         );
 
         this.runThreads(timeoutPair);

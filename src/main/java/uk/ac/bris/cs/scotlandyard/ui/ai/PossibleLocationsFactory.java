@@ -131,7 +131,13 @@ public class PossibleLocationsFactory {
                 throw new IllegalArgumentException("Can't go further than a double move");
             }
 
-            List<Integer> detectiveLocations = BoardHelpers.getDetectiveLocations(board);
+            List<Integer> detectiveLocations;
+            if (AIGameState.class.isInstance(board)) {
+                detectiveLocations = ((AIGameState) board).getDetectiveLocations();
+            } else {
+                detectiveLocations = BoardHelpers.getDetectiveLocations(board);
+            }
+
             Set<Integer> newLocations = filterDetectiveLocationsFromLocations(this.getLocations(), detectiveLocations);
 
             if (board.getMrXTravelLog().size() == this.turn) {

@@ -81,9 +81,11 @@ public class DetectiveAI implements AI{
 
         this.mctsTree = new Node(
                 possibleGameState.left(),
+                this.possibleLocations,
                 new Heuristics.MoveFiltering(),
                 new Heuristics.CoalitionReduction(),
-                new Heuristics.ExplorationCoefficient()
+                new Heuristics.ExplorationCoefficient(),
+                new Heuristics.EGreedyPlayouts()
         );
 
         runThreads(timeoutPair);

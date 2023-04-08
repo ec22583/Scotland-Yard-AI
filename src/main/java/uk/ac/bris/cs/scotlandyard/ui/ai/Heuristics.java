@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Table;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
 import uk.ac.bris.cs.scotlandyard.model.Move;
@@ -157,14 +158,54 @@ public interface Heuristics {
     class EGreedyPlayouts {
         //TODO: I have designed a framework for E-Greedy playouts.
 
-        //For MrX
-        public void maximizeDetectiveDistance (){
+        //For Detectives
+        public Move getDetectiveBestMove (
+                ImmutableSet<Move> moves,
+                AIGameState gameState,
+                PossibleLocations possibleLocations ){
+            Table<Integer, Integer, Integer> distances = DistancesSingleton.getInstance().getDistances();
 
+            int minimumDistance = Integer.MAX_VALUE;
+            Move bestMove = moves.asList().get(0);
+
+            for (Move move : moves) {
+                int destination = move.accept(new MoveVisitors.DestinationVisitor());
+                int sumDistance = possibleLocations.getLocations()
+                        .stream()
+                        .map(l -> distances.get(l, destination))
+                        .mapToInt(Integer::intValue)
+                        .sum();
+                if (sumDistance < minimumDistance) {
+                    minimumDistance = sumDistance;
+                    bestMove = move;
+                }
+            }
+
+            return bestMove;
         }
 
-        //For Detective
-        public void minimizeMrXDistance(){
+        //For MrX
+        public Move getMrXBestMove(ImmutableSet<Move> moves, AIGameState gameState) {
+            Table<Integer, Integer, Integer> distances = DistancesSingleton.getInstance().getDistances();
+            List<Integer> detectiveLocations = gameState.getDetectiveLocations();
 
+            int maximinDistance = Integer.MIN_VALUE;
+            Move bestMove = moves.asList().get(0);
+            for (Move move: moves) {
+                int destination = move.accept(new MoveVisitors.DestinationVisitor());
+                int minDistance = detectiveLocations
+                        .stream()
+                        .map(l -> distances.get(l, destination))
+                        .mapToInt(Integer::intValue)
+                        .min()
+                        .orElseThrow();
+                if (minDistance > maximinDistance) {
+                    maximinDistance = minDistance;
+                    bestMove = move;
+                }
+            }
+
+            return bestMove;
         }
     }
 
@@ -195,11 +236,11 @@ public interface Heuristics {
 
     class ExplorationCoefficient {
         public double getMrXCoefficient () {
-            return 0.8;
+            return 0.2;
         }
 
         public double getDetectiveCoefficient () {
-            return 3.0;
+            return 2.0;
         }
     }
 

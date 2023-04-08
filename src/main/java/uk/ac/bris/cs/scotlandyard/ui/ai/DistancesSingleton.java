@@ -61,7 +61,6 @@ public class DistancesSingleton {
     }
 
     static public DistancesSingleton getInstance(){
-        DistancesSingleton instance = null;
         if (DistancesSingleton.instance == null){
             instance = new DistancesSingleton();
         }

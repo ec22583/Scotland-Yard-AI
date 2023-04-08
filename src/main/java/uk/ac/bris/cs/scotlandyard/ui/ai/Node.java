@@ -21,9 +21,11 @@ public class Node {
     private ConcurrentHashMap<Integer, Node> children;
     private Node parent = null;
     final private Node root;
+    final private PossibleLocations possibleLocations;
     final private Heuristics.MoveFiltering moveFilter;
     final private Heuristics.CoalitionReduction coalitionReduction;
     final private Heuristics.ExplorationCoefficient explorationCoefficient;
+    final private Heuristics.EGreedyPlayouts eGreedyPlayouts;
 
     /**
      * Helper function to Constructors
@@ -47,15 +49,19 @@ public class Node {
      * @param coalitionReduction coalitionReduction heuristic
      * */
     public Node (AIGameState gameState,
+                 PossibleLocations possibleLocations,
                  Heuristics.MoveFiltering moveFilter,
                  Heuristics.CoalitionReduction coalitionReduction,
-                 Heuristics.ExplorationCoefficient explorationCoefficient) {
+                 Heuristics.ExplorationCoefficient explorationCoefficient,
+                 Heuristics.EGreedyPlayouts eGreedyPlayouts) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
         this.root = this;
         this.moveFilter = moveFilter;
+        this.possibleLocations = possibleLocations;
         this.coalitionReduction = coalitionReduction;
         this.explorationCoefficient = explorationCoefficient;
+        this.eGreedyPlayouts = eGreedyPlayouts;
 
         System.out.println("Current turn: " + this.piece);
 
@@ -79,17 +85,21 @@ public class Node {
                  Node root,
                  Node parent,
                  Move previousMove,
+                 PossibleLocations possibleLocations,
                  Heuristics.MoveFiltering moveFilter,
                  Heuristics.CoalitionReduction coalitionReduction,
-                 Heuristics.ExplorationCoefficient explorationCoefficient) {
+                 Heuristics.ExplorationCoefficient explorationCoefficient,
+                 Heuristics.EGreedyPlayouts eGreedyPlayouts) {
         this.gameState = gameState;
         this.root = root;
         this.parent = parent;
         this.previousMove = previousMove;
+        this.possibleLocations = possibleLocations;
         this.children = new ConcurrentHashMap<>();
         this.moveFilter = moveFilter;
         this.coalitionReduction = coalitionReduction;
         this.explorationCoefficient = explorationCoefficient;
+        this.eGreedyPlayouts = eGreedyPlayouts;
 
 //      Win state reached (Can't expand anymore)
         if (!gameState.getWinner().isEmpty()) this.piece = parent.piece;
@@ -165,14 +175,19 @@ public class Node {
         remainingMoves.remove(nextMove);
 
         AIGameState newGameState = this.gameState.advance(nextMove);
+
+        PossibleLocations newPossibleLocations = this.possibleLocations.updateLocations(newGameState);
+
         Node newNode = new Node(
                 newGameState,
                 this.root,
                 this,
                 nextMove,
+                newPossibleLocations,
                 this.moveFilter,
                 this.coalitionReduction,
-                this.explorationCoefficient
+                this.explorationCoefficient,
+                this.eGreedyPlayouts
         );
         this.children.put(newGameState.hashCode(), newNode);
 
@@ -260,26 +275,37 @@ public class Node {
     // Simulation/Playoff stage
     public Piece simulateGame () {
         AIGameState currentGameState = this.gameState;
+        PossibleLocations currentPossibleLocations = this.possibleLocations;
 
         //Anchor case
         if (Node.getGameWinner(currentGameState).isPresent())
             return Node.getGameWinner(currentGameState).get();
 
         while (currentGameState.getWinner().isEmpty()) {
-            Move randomMove = currentGameState.getAvailableMoves()
-                    .asList()
-                    .get(
-                            new Random().nextInt(currentGameState.getAvailableMoves().size())
-                    );
-            currentGameState = currentGameState.advance(randomMove);
+            Move move;
+            if (currentGameState.getAvailableMoves().asList().get(0).commencedBy().isMrX()) {
+                move = this.eGreedyPlayouts.getMrXBestMove(
+                    currentGameState.getAvailableMoves(),
+                    currentGameState
+                );
+            } else {
+                move = this.eGreedyPlayouts.getDetectiveBestMove(
+                    currentGameState.getAvailableMoves(),
+                    currentGameState,
+                    currentPossibleLocations
+                );
+            }
+
+            currentGameState = currentGameState.advance(move);
+            currentPossibleLocations = currentPossibleLocations.updateLocations(currentGameState);
         }
 
-        Optional<Piece> optionalWinner = Node.getGameWinner(currentGameState);
-        if (optionalWinner.isEmpty())
-            throw new IllegalStateException("Cannot get winner for winning game state");
+//        Optional<Piece> optionalWinner = Node.getGameWinner(currentGameState);
+//        if (optionalWinner.isEmpty())
+//            throw new IllegalStateException("Cannot get winner for winning game state");
 
         //Recursive case
-        return optionalWinner.get();
+        return Node.getGameWinner(currentGameState).orElseThrow();
     }
 
     // Backpropagation stage

@@ -85,8 +85,15 @@ public class AIGameStateFactory {
                             .toList());
                 }
 //				Checks if any detectives have possible moves remaining.
-                if (!MyGameState.makeSingleMoves(setup, detectiveLocations, detective, detective.location()).isEmpty()) {
-                    detectivesHaveMoves = true;
+                if (!detectivesHaveMoves) {
+					if (!MyGameState.makeSingleMoves(
+							setup,
+							detectiveLocations,
+							detective,
+							detective.location()
+					).isEmpty()) {
+						detectivesHaveMoves = true;
+					}
                 }
             }
 
@@ -283,6 +290,15 @@ public class AIGameStateFactory {
 		}
 
 		/**
+		 * Extra added method to allow the AI to access MrX's position.
+		 *
+		 * @return Current position of Mr X
+		 */
+		public int getMrXLocation () {
+			return this.mrX.location();
+		}
+
+		/**
 		 * Helper method to get all moves which use a single ticket for player
 		 *
 		 * @param setup              Setup for the game
@@ -295,11 +311,20 @@ public class AIGameStateFactory {
 															Player player, int source) {
 			Set<Move.SingleMove> moves = new HashSet<>();
 			Map<ScotlandYard.Ticket, Integer> tickets = player.tickets();
-
 			boolean hasSecretTicket = tickets.get(ScotlandYard.Ticket.SECRET) > 0;
+
 			for (int destination : setup.graph.adjacentNodes(source)) {
 //				If detective not already occupying destination node.
 				if (!detectiveLocations.contains(destination)) {
+
+// 					Adds move if player has secret ticket.
+					if (hasSecretTicket) {
+						moves.add(new Move.SingleMove( 	player.piece(),
+														source,
+														ScotlandYard.Ticket.SECRET,
+														destination )
+						);
+					}
 
 					for (ScotlandYard.Transport t : Objects.requireNonNull(
 							setup.graph.edgeValueOrDefault(
@@ -308,17 +333,7 @@ public class AIGameStateFactory {
 									ImmutableSet.of()
 							)
 					)) {
-						//boolean hasSecretTicket = tickets.get(ScotlandYard.Ticket.SECRET) > 0;
 						boolean hasNonSecretTicket = tickets.get(t.requiredTicket()) > 0;
-
-// 						Adds move if player has secret ticket.
-						if (hasSecretTicket) {
-							moves.add(new Move.SingleMove( 	player.piece(),
-															source,
-															ScotlandYard.Ticket.SECRET,
-															destination )
-							);
-						}
 
 //						Add move if player has correct non-secret ticket.
 						if (hasNonSecretTicket) {
