@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
 import com.google.common.io.Resources;
+import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,11 +33,12 @@ public class DistancesSingleton {
 							Resources.getResource("distances.txt"),
 							StandardCharsets.UTF_8
 					);
+			int dimensions = ScotlandYard.standardGraph().nodes().size();
 
 			String[] distanceStrings = file.split("\n");
 
 
-			int[][] distancesArray = new int[199][199];
+			int[][] distancesArray = new int[dimensions][dimensions];
 			for (int i = 0; i < distanceStrings.length; i++) {
 				String distanceString = distanceStrings[i];
 

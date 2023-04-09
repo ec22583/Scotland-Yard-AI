@@ -54,7 +54,7 @@ public class MCTS extends Thread {
     public void run () {
         int numIterations = 0;
 
-        //Cap numIterations at 25000 because there is no noticable behavioural improvements after this point
+        //Cap numIterations at 25000 because there is no noticeable behavioural improvements after this point
         //Additionally it is also to make AI take their turn faster towards the end of the game
         while(!Thread.interrupted() && (numIterations < 25000)) {
             numIterations++;

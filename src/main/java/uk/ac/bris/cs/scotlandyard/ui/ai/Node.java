@@ -8,17 +8,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 
 // Our own node data structure
 public class Node {
     final private AIGameState gameState;
     private Move previousMove = null;
     final private Piece piece; //Either MrX or a Detective
-    private List<Move> remainingMoves; //Pre-filtered
+    final private List<Move> remainingMoves; //Pre-filtered
     private double totalPlays;
     private double totalValue;
-    private ConcurrentHashMap<Integer, Node> children;
+    final private List<Node> children;
     private Node parent = null;
     final private Node root;
     final private PossibleLocations possibleLocations;
@@ -70,7 +69,7 @@ public class Node {
 
         this.totalValue = 0;
         this.totalPlays = 0;
-        this.children = new ConcurrentHashMap<>();
+        this.children = new ArrayList<>(this.remainingMoves.size());
     }
 
 
@@ -90,12 +89,12 @@ public class Node {
                  Heuristics.CoalitionReduction coalitionReduction,
                  Heuristics.ExplorationCoefficient explorationCoefficient,
                  Heuristics.EGreedyPlayouts eGreedyPlayouts) {
+
         this.gameState = gameState;
         this.root = root;
         this.parent = parent;
         this.previousMove = previousMove;
         this.possibleLocations = possibleLocations;
-        this.children = new ConcurrentHashMap<>();
         this.moveFilter = moveFilter;
         this.coalitionReduction = coalitionReduction;
         this.explorationCoefficient = explorationCoefficient;
@@ -106,6 +105,7 @@ public class Node {
         else this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
 
         this.remainingMoves = applyMoveFilterHeuristic(gameState);
+        this.children = new ArrayList<>(this.remainingMoves.size());
 
         this.totalValue = 0.0;
         this.totalPlays = 0.0;
@@ -132,7 +132,7 @@ public class Node {
     }
 
     public List<Node> getChildren (){
-        return ImmutableList.copyOf(this.children.values());
+        return ImmutableList.copyOf(this.children);
     }
 
     /**
@@ -144,12 +144,12 @@ public class Node {
         double bestScore = Double.NEGATIVE_INFINITY;
         Node bestChild = null;
 
-        if (this.children.size() == 0) throw new IllegalStateException("Cannot get best child of leaf node");
+        if (this.children.isEmpty()) throw new IllegalStateException("Cannot get best child of leaf node");
 
-        for (Node child : this.children.values()) {
-            double currentScore = child.getTotalValue()/child.getTotalPlays();
+        for (Node child : this.children) {
+            double currentScore = child.getTotalPlays();
             if (currentScore > bestScore) {
-                System.out.println("Found child with higher score: " + child.getPreviousMove());
+                System.out.println("Found child with higher plays: " + child.getPreviousMove() + " " + child.getTotalPlays());
                 bestScore = currentScore;
                 bestChild = child;
             }
@@ -189,7 +189,7 @@ public class Node {
                 this.explorationCoefficient,
                 this.eGreedyPlayouts
         );
-        this.children.put(newGameState.hashCode(), newNode);
+        this.children.add(newNode);
 
         return newNode;
     }
@@ -202,12 +202,12 @@ public class Node {
      * @throws IllegalArgumentException if the childNode given as parameter is not the child of the node.
      * */
     private double calculateUCB (Node childNode) {
-        double EXPLORATION_VALUE = this.root.piece.isMrX() ?
+        double EXPLORATION_VALUE = this.piece.isMrX() ?
                 this.explorationCoefficient.getMrXCoefficient() :
                 this.explorationCoefficient.getDetectiveCoefficient();
 
         if (childNode == null) throw new IllegalArgumentException("Child node not defined.");
-        if (!this.children.containsKey(childNode.getGameState().hashCode()))
+        if (!this.children.contains(childNode))
             throw new IllegalArgumentException("Node not child of current node.");
 
         double avgScore = childNode.getTotalValue() / childNode.getTotalPlays();
@@ -221,10 +221,10 @@ public class Node {
                                 / childNode.getTotalPlays()
                 ));
 
-        // If player is a detective.
-        if ( this.getPiece().isDetective() ) {
-            avgScore = 1 - avgScore;
-        }
+//        // If player is a detective.
+//        if ( !this.getPiece().equals(this.root.getPiece()) ) {
+//            avgScore = 1 - avgScore;
+//        }
 
         return avgScore + explorationFactor;
     }
@@ -241,7 +241,7 @@ public class Node {
 //      This is safe since it will always be overwritten in the for loop.
         Node bestChild = null;
 
-        for (Node child : this.children.values()){
+        for (Node child : this.children){
             double currentUCB = this.calculateUCB(child);
             if (bestScore < currentUCB) {
                 bestScore = currentUCB;
@@ -283,25 +283,27 @@ public class Node {
 
         while (currentGameState.getWinner().isEmpty()) {
             Move move;
-            if (currentGameState.getAvailableMoves().asList().get(0).commencedBy().isMrX()) {
-                move = this.eGreedyPlayouts.getMrXBestMove(
-                    currentGameState.getAvailableMoves(),
-                    currentGameState
-                );
+            if (new Random().nextDouble() > 0.2) {
+                if (currentGameState.getAvailableMoves().asList().get(0).commencedBy().isMrX()) {
+                    move = this.eGreedyPlayouts.getMrXBestMove(
+                        currentGameState.getAvailableMoves(),
+                        currentGameState
+                    );
+                } else {
+                    move = this.eGreedyPlayouts.getDetectiveBestMove(
+                        currentGameState.getAvailableMoves(),
+                        currentPossibleLocations
+                    );
+                }
             } else {
-                move = this.eGreedyPlayouts.getDetectiveBestMove(
-                    currentGameState.getAvailableMoves(),
-                    currentPossibleLocations
+                move = currentGameState.getAvailableMoves().asList().get(
+                        new Random().nextInt(currentGameState.getAvailableMoves().size())
                 );
             }
 
             currentGameState = currentGameState.advance(move);
             currentPossibleLocations = currentPossibleLocations.updateLocations(currentGameState);
         }
-
-//        Optional<Piece> optionalWinner = Node.getGameWinner(currentGameState);
-//        if (optionalWinner.isEmpty())
-//            throw new IllegalStateException("Cannot get winner for winning game state");
 
         //Recursive case
         return Node.getGameWinner(currentGameState).orElseThrow();
@@ -311,13 +313,23 @@ public class Node {
     public Piece backPropagation(Piece value) {
         this.totalPlays += 1;
 
-        //Apply Coalition Reduction
-        this.totalValue += this.coalitionReduction.calculateValue(this.root.piece, value);
-
 //      Root node
-        if (this.parent == null) return value;
+        if (this.parent == null) {
+            this.totalValue += this.coalitionReduction.calculateValue(this.piece, value);
+            return value;
+        } else {
+//          Apply Coalition Reduction
+            this.totalValue += this.coalitionReduction.calculateValue(this.parent.piece, value);
+//            if (this.parent.parent == null && this.root != this) {
+//                System.out.println("--------------------------------------------------------------------------");
+//                System.out.println(String.format("Winner of game: %s, Parent of node: %s, Root of node: %s Value added: %s", value, this.parent.piece, this.root.piece, this.coalitionReduction.calculateValue(this.parent.piece, value)));
+//                System.out.println(String.format("Move: %s, New plays: %s, New value: %s", this.getPreviousMove(), this.getTotalPlays(), this.getTotalValue()));
+//            }
 
-        // Upwards recursion
-        return this.parent.backPropagation(value);
+
+//          Upwards recursion
+            return this.parent.backPropagation(value);
+        }
+
     }
 }

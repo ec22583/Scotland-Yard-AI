@@ -159,6 +159,7 @@ public interface Heuristics {
      * */
     class EGreedyPlayouts {
         //TODO: I have designed a framework for E-Greedy playouts.
+        private double EPSILON = 0.2;
         private DistancesSingleton distances;
 
         public EGreedyPlayouts() {
@@ -174,29 +175,29 @@ public interface Heuristics {
         public Move getDetectiveBestMove (
                 ImmutableSet<Move> moves,
                 PossibleLocations possibleLocations ){
-//            ImmutableSet<Integer> locations = possibleLocations.getLocations();
-//
-//            //Assume max distance
-//            int minimumDistance = Integer.MAX_VALUE;
-//            Move bestMove = moves.asList().get(0);
-//            MoveVisitors.DestinationVisitor destinationVisitor = new MoveVisitors.DestinationVisitor();
-//
-//            for (Move move : moves) {
-//                int destination = move.accept(destinationVisitor);
-//                int sumDistance = 0;
-//
-////              Not using stream chain due to worse performance.
-//                for (int location : locations) {
-//                    sumDistance += distances.get(location, destination);
-//                }
-//                if (sumDistance < minimumDistance) {
-//                    minimumDistance = sumDistance;
-//                    bestMove = move;
-//                }
-//            }
-//
-//            return bestMove;
-            return moves.asList().get(new Random().nextInt(moves.size()));
+            ImmutableSet<Integer> locations = possibleLocations.getLocations();
+
+            //Assume max distance
+            int minimumDistance = Integer.MAX_VALUE;
+            Move bestMove = moves.asList().get(0);
+            MoveVisitors.DestinationVisitor destinationVisitor = new MoveVisitors.DestinationVisitor();
+
+            for (Move move : moves) {
+                int destination = move.accept(destinationVisitor);
+                int sumDistance = 0;
+
+//              Not using stream chain due to worse performance.
+                for (int location : locations) {
+                    sumDistance += distances.get(location, destination);
+                }
+                if (sumDistance < minimumDistance) {
+                    minimumDistance = sumDistance;
+                    bestMove = move;
+                }
+            }
+
+            return bestMove;
+//            return moves.asList().get(new Random().nextInt(moves.size()));
         }
 
          /**
@@ -206,29 +207,29 @@ public interface Heuristics {
          * recently inspected best Move
          * */
         public Move getMrXBestMove(ImmutableSet<Move> moves, AIGameState gameState) {
-            return moves.asList().get(new Random().nextInt(moves.size()));
-//
-//            DistancesSingleton distances = DistancesSingleton.getInstance();
-//            List<Integer> detectiveLocations = gameState.getDetectiveLocations();
-//
-//            //Assume closest distance (0)
-//            int maximinDistance = 0;
-//            Move bestMove = moves.asList().get(0);
-//            for (Move move: moves) {
-//                int destination = move.accept(new MoveVisitors.DestinationVisitor());
-//                int minDistance = detectiveLocations
-//                        .stream()
-//                        .map(l -> distances.get(l, destination))
-//                        .mapToInt(Integer::intValue)
-//                        .min()
-//                        .orElseThrow();
-//                if (minDistance > maximinDistance) {
-//                    maximinDistance = minDistance;
-//                    bestMove = move;
-//                }
-//            }
-//
-//            return bestMove;
+//            return moves.asList().get(new Random().nextInt(moves.size()));
+
+            DistancesSingleton distances = DistancesSingleton.getInstance();
+            List<Integer> detectiveLocations = gameState.getDetectiveLocations();
+
+            //Assume closest distance (0)
+            int maximinDistance = 0;
+            Move bestMove = moves.asList().get(0);
+            for (Move move: moves) {
+                int destination = move.accept(new MoveVisitors.DestinationVisitor());
+                int minDistance = detectiveLocations
+                        .stream()
+                        .map(l -> distances.get(l, destination))
+                        .mapToInt(Integer::intValue)
+                        .min()
+                        .orElseThrow();
+                if (minDistance > maximinDistance) {
+                    maximinDistance = minDistance;
+                    bestMove = move;
+                }
+            }
+
+            return bestMove;
         }
     }
 
@@ -238,7 +239,7 @@ public interface Heuristics {
      * */
     class CoalitionReduction {
 
-        private final double r = 0.5;
+        private final double r = 0.375;
         /**
          * Application of Coalition Reduction. If root piece is detective but not the value piece then
          * give only (1-r) times the weighting on the value.
