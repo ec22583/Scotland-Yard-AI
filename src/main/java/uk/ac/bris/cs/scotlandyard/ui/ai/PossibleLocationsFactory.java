@@ -38,16 +38,11 @@ public class PossibleLocationsFactory {
                                                  ScotlandYard.Ticket usedTicket,
                                                  ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph){
             //Extract type of transport that is used to go to the edge
-            Optional<ImmutableSet<ScotlandYard.Transport>> optionalTransports = graph.edgeValue(edge);
-            if (optionalTransports.isEmpty()) throw new IllegalStateException("Edge does not exist");
-
-            ImmutableSet<ScotlandYard.Transport> transports = optionalTransports.get();
-            ImmutableSet<ScotlandYard.Ticket> tickets =
-                    ImmutableSet.copyOf(
-                            transports
-                            .stream()
-                            .map(t -> t.requiredTicket())
-                            .toList());
+            ImmutableSet<ScotlandYard.Transport> transports = graph.edgeValue(edge).orElseThrow();
+            List<ScotlandYard.Ticket> tickets = transports
+                    .stream()
+                    .map(t -> t.requiredTicket())
+                    .toList();
 
             return tickets.contains(usedTicket); //returns true if edge contains ticket of specific type
         }
@@ -66,10 +61,12 @@ public class PossibleLocationsFactory {
                 Collection<Integer> detectiveLocations,
                 Collection<Integer> oldPossibleLocations,
                 ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph) {
-            Set<Integer> newLocations = new HashSet<>();
+
+            ImmutableSet.Builder<Integer> builder = ImmutableSet.builder();
+            Set<Integer> detectiveLocationsSet = ImmutableSet.copyOf(detectiveLocations);
 
             for (int oldPossibleLocation : oldPossibleLocations) {
-                newLocations.addAll(
+                builder.addAll(
 //              Gets all edges which connect to the current oldPossibleLocation.
                         graph.incidentEdges(oldPossibleLocation)
                         .stream()
@@ -82,10 +79,10 @@ public class PossibleLocationsFactory {
                         .map(edge -> edge.adjacentNode(oldPossibleLocation))
 
                         //Prune all possible locations that detectives are in
-                        .filter(l -> !detectiveLocations.contains(l))
+                        .filter(l -> !detectiveLocationsSet.contains(l))
                         .toList());
             }
-            return ImmutableSet.copyOf(newLocations);
+            return builder.build();
         }
 
         @Nonnull
@@ -140,11 +137,7 @@ public class PossibleLocationsFactory {
 
             Set<Integer> newLocations = filterDetectiveLocationsFromLocations(this.getLocations(), detectiveLocations);
 
-            if (board.getMrXTravelLog().size() == this.turn) {
-                return new MyPossibleLocations(newLocations, board.getMrXTravelLog().size());
-//              If MrX hasn't moved, just filter out any current detective locations from possible locations.
-            }
-            else {
+            if (board.getMrXTravelLog().size() > this.turn) {
 //              Mr X has moved, so generate new possible locations and filter out any which detectives are in
                 List<LogEntry> logEntries = board.getMrXTravelLog()
                         .subList(this.turn, board.getMrXTravelLog().size());

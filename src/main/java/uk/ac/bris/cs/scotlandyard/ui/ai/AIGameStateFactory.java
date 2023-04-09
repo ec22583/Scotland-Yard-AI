@@ -3,6 +3,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableTable;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
@@ -190,9 +191,10 @@ public class AIGameStateFactory {
 		 */
 		@Nonnull
 		private ImmutableSet<Player> getPlayerSet() {
-			Set<Player> players = new HashSet<>(this.detectives);
-			players.add(this.mrX);
-			return ImmutableSet.copyOf(players);
+			ImmutableSet.Builder<Player> builder = ImmutableSet.builder();
+			builder.addAll(this.detectives);
+			builder.add(this.mrX);
+			return builder.build();
 		}
 
 		@Nonnull
@@ -299,7 +301,8 @@ public class AIGameStateFactory {
 		}
 
 		/**
-		 * Helper method to get all moves which use a single ticket for player
+		 * Helper method to get all moves which use a single ticket for player and add
+		 * them to passed in builder.
 		 *
 		 * @param setup              Setup for the game
 		 * @param detectiveLocations List of current detective players
@@ -307,8 +310,11 @@ public class AIGameStateFactory {
 		 * @param source             The starting location of the player
 		 * @return Set of all single moves from position for the player
 		 */
-		private static Set<Move.SingleMove> makeSingleMoves(GameSetup setup, List<Integer> detectiveLocations,
-															Player player, int source) {
+		private static Set<Move.SingleMove> makeSingleMoves(
+				GameSetup setup,
+				List<Integer> detectiveLocations,
+				Player player,
+				int source ) {
 			Set<Move.SingleMove> moves = new HashSet<>();
 			Map<ScotlandYard.Ticket, Integer> tickets = player.tickets();
 			boolean hasSecretTicket = tickets.get(ScotlandYard.Ticket.SECRET) > 0;
@@ -360,8 +366,11 @@ public class AIGameStateFactory {
 		 * @param source             The starting location of the player
 		 * @return Set of all double moves possible for player
 		 */
-		private static Set<Move.DoubleMove> makeDoubleMoves(GameSetup setup, List<Integer> detectiveLocations,
-															Player player, int source){
+		private static Set<Move.DoubleMove> makeDoubleMoves(
+				GameSetup setup,
+				List<Integer> detectiveLocations,
+				Player player,
+				int source ){
 			Set<Move.DoubleMove> doubleMoves = new HashSet<>();
 
 //			Only runs if player has double tickets.
@@ -426,30 +435,38 @@ public class AIGameStateFactory {
 																 Set<Piece> winners,
 																 List<LogEntry> log,
 																 GameSetup setup) {
-			Set<Move> moves = new HashSet<>();
+			ImmutableSet.Builder<Move> builder = ImmutableSet.builder();
 			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(detectives);
 
 //			Only generate moves if no winner.
 			if (winners.isEmpty()) {
-				List<Player> playerList = new ArrayList<>(detectives.size() + 1);
-				playerList.addAll(detectives);
-				playerList.add(mrX);
+				List<Player> players = new ArrayList<>(detectives.size() + 1);
+
+				if (remaining.contains(mrX.piece())) {
+					players.add(mrX);
+				} else {
+					for (Player detective : detectives) {
+						if (remaining.contains(detective.piece())) {
+							players.add(detective);
+						}
+					}
+				}
 
 //				Converts all remaining pieces into corresponding players.
-				List<Player> players = playerList.stream()
-						.filter(p -> remaining.contains(p.piece()))
-						.toList();
+//				List<Player> players = playerList.stream()
+//						.filter(p -> remaining.contains(p.piece()))
+//						.toList();
 
 				for (Player player : players) {
-					moves.addAll(MyGameState.makeSingleMoves(setup, detectiveLocations, player, player.location()));
+					builder.addAll(MyGameState.makeSingleMoves(setup, detectiveLocations, player, player.location()));
 
 //					Ensures enough space left in log book for second move.
 					if (log.size() < (setup.moves.size() - 1) ){
-						moves.addAll(MyGameState.makeDoubleMoves(setup, detectiveLocations, player, player.location()));
+						builder.addAll(MyGameState.makeDoubleMoves(setup, detectiveLocations, player, player.location()));
 					}
 				}
 			}
-			return ImmutableSet.copyOf(moves);
+			return builder.build();
 		}
 
 		/**
@@ -459,24 +476,24 @@ public class AIGameStateFactory {
 		 * @return New log book with new log entry for move (if commenced by mrX)
 		 */
 		private ImmutableList<LogEntry> generateNewLog (Move move){
-			List<LogEntry> newLog = new ArrayList<>(this.getSetup().moves.size());
-			newLog.addAll(this.log);
+			ImmutableList.Builder<LogEntry> builder =
+					ImmutableList.builderWithExpectedSize(this.getMrXTravelLog().size() + 2);
+			builder.addAll(this.log);
 
 			if (move.commencedBy().isMrX()){
 				MoveVisitors.SingleMoveVisitor singleMoveVisitor = new MoveVisitors.SingleMoveVisitor();
 				List<Move.SingleMove> singleMoves = move.accept(singleMoveVisitor);
-
-				for (Move.SingleMove singleMove : singleMoves) {
+				for (int i = 0; i < singleMoves.size(); i++) {
 					// True when mrX should reveal his move.
-					if (this.setup.moves.get(newLog.size())) {
-						newLog.add(LogEntry.reveal(singleMove.ticket, singleMove.destination));
+					if (this.setup.moves.get(this.getMrXTravelLog().size() + i)) {
+						builder.add(LogEntry.reveal(singleMoves.get(i).ticket, singleMoves.get(i).destination));
 					} else {
-						newLog.add(LogEntry.hidden(singleMove.ticket));
+						builder.add(LogEntry.hidden(singleMoves.get(i).ticket));
 					}
 				}
 			}
 
-			return ImmutableList.copyOf(newLog);
+			return builder.build();
 		}
 
 		/**

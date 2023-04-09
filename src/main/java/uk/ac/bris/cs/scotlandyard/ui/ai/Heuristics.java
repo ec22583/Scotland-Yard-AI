@@ -163,18 +163,22 @@ public interface Heuristics {
                 ImmutableSet<Move> moves,
                 AIGameState gameState,
                 PossibleLocations possibleLocations ){
-            Table<Integer, Integer, Integer> distances = DistancesSingleton.getInstance().getDistances();
+            final Table<Integer, Integer, Integer> distances = DistancesSingleton.getInstance().getDistances();
+            final ImmutableSet<Integer> locations = possibleLocations.getLocations();
 
             int minimumDistance = Integer.MAX_VALUE;
             Move bestMove = moves.asList().get(0);
+            MoveVisitors.DestinationVisitor destinationVisitor = new MoveVisitors.DestinationVisitor();
 
             for (Move move : moves) {
-                int destination = move.accept(new MoveVisitors.DestinationVisitor());
-                int sumDistance = possibleLocations.getLocations()
-                        .stream()
-                        .map(l -> distances.get(l, destination))
-                        .mapToInt(Integer::intValue)
-                        .sum();
+                int destination = move.accept(destinationVisitor);
+
+//              Not using stream chain due to worse performance.
+                int sumDistance = 0;
+                for (int l : locations) {
+                    sumDistance += distances.get(l, destination);
+                }
+
                 if (sumDistance < minimumDistance) {
                     minimumDistance = sumDistance;
                     bestMove = move;

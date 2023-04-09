@@ -1,6 +1,7 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 import com.google.common.io.Resources;
 
 import java.io.IOException;
@@ -13,7 +14,7 @@ public class DistancesSingleton {
     static private DistancesSingleton instance = null;
 
     //Variables wrapped inside the singleton
-    private ImmutableTable<Integer, Integer, Integer> distances;
+    private Table<Integer, Integer, Integer> distances;
 
     private DistancesSingleton(){
         distances = readDistances();
@@ -24,7 +25,7 @@ public class DistancesSingleton {
      * @return the distance table
      * @throws IllegalStateException if the distances.txt file is not in the correct format
      * */
-    private static ImmutableTable<Integer, Integer, Integer> readDistances () {
+    private static Table<Integer, Integer, Integer> readDistances () {
 		try {
 			String file = Resources.toString(
 							Resources.getResource("distances.txt"),
@@ -56,7 +57,7 @@ public class DistancesSingleton {
 		}
 	}
 
-    public ImmutableTable<Integer, Integer, Integer> getDistances(){
+    public Table<Integer, Integer, Integer> getDistances(){
         return distances;
     }
 

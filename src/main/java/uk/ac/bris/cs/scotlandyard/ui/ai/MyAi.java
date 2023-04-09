@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Ai;
 import uk.ac.bris.cs.scotlandyard.model.Board;
@@ -14,7 +15,7 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 public class MyAi implements Ai {
 	private MrXAI mrXAI;
 	private DetectiveAI detectiveAI;
-	private ImmutableTable<Integer, Integer, Integer> distances;
+	private Table<Integer, Integer, Integer> distances;
 
 	public void onStart() {
 		this.distances = DistancesSingleton.getInstance().getDistances();

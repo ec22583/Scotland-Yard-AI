@@ -1,6 +1,7 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
@@ -15,10 +16,10 @@ public class DetectiveAI implements AI{
     private PossibleLocations possibleLocations;
     final private AIGameStateFactory aiGameStateFactory;
     final private PossibleLocationsFactory possibleLocationsFactory;
-    final private ImmutableTable<Integer, Integer, Integer> distances;
+    final private Table<Integer, Integer, Integer> distances;
     private Node mctsTree;
 
-    public DetectiveAI (ImmutableTable<Integer, Integer, Integer> distances) {
+    public DetectiveAI (Table<Integer, Integer, Integer> distances) {
         this.distances = distances;
         this.aiGameStateFactory = new AIGameStateFactory();
         this.possibleLocationsFactory = new PossibleLocationsFactory();
