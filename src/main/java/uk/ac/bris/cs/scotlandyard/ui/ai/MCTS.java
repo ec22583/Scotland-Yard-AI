@@ -9,10 +9,12 @@ public class MCTS extends Thread {
 
     private Thread parentThread;
     final private Node mctsTree;
+    final Heuristics.EGreedyPlayouts eGreedyPlayouts;
 
     public MCTS (Node mctsTree, Thread parentThread) {
         this.mctsTree = mctsTree;
         this.parentThread = parentThread;
+        this.eGreedyPlayouts = new Heuristics.EGreedyPlayouts();
     }
 
     /**
@@ -35,7 +37,11 @@ public class MCTS extends Thread {
             node = node.expandNode();
 
             // Simulation Stage
-            gameValue = node.simulateGame();
+            gameValue = Node.simulateGame(
+                    node.getGameState(),
+                    node.getPossibleLocations(),
+                    this.eGreedyPlayouts
+            );
         }
         else {
             Optional<Piece> optionalPiece = Node.getGameWinner(node.getGameState());

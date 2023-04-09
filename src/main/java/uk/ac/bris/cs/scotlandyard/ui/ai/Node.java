@@ -1,20 +1,21 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
-import com.google.common.collect.ImmutableList;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
-// Our own node data structure
+/**
+ * Manages the state for the Monte Carlo Tree Search.
+ * Stores the current game state, as well as the recorded plays and wins on a state.
+ * Wins are from perspective of parent, unless node is root node, where wins are from
+ * perspective of itself.
+ */
 public class Node {
     final private AIGameState gameState;
     private Move previousMove = null;
-    final private Piece piece; //Either MrX or a Detective
-    final private List<Move> remainingMoves; //Pre-filtered
+    final private Piece piece; // Either MrX or a Detective
+    final private List<Move> remainingMoves; // Pre-filtered
     private double totalPlays;
     private double totalValue;
     final private List<Node> children;
@@ -24,7 +25,6 @@ public class Node {
     final private Heuristics.MoveFiltering moveFilter;
     final private Heuristics.CoalitionReduction coalitionReduction;
     final private Heuristics.ExplorationCoefficient explorationCoefficient;
-    final private Heuristics.EGreedyPlayouts eGreedyPlayouts;
 
     /**
      * Helper function to Constructors
@@ -51,8 +51,7 @@ public class Node {
                  PossibleLocations possibleLocations,
                  Heuristics.MoveFiltering moveFilter,
                  Heuristics.CoalitionReduction coalitionReduction,
-                 Heuristics.ExplorationCoefficient explorationCoefficient,
-                 Heuristics.EGreedyPlayouts eGreedyPlayouts) {
+                 Heuristics.ExplorationCoefficient explorationCoefficient) {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
         this.root = this;
@@ -60,7 +59,6 @@ public class Node {
         this.possibleLocations = possibleLocations;
         this.coalitionReduction = coalitionReduction;
         this.explorationCoefficient = explorationCoefficient;
-        this.eGreedyPlayouts = eGreedyPlayouts;
 
         System.out.println("Current turn: " + this.piece);
 
@@ -75,10 +73,10 @@ public class Node {
 
     /**
      * Constructor for non-root nodes
-     * @param gameState Current game state
-     * @param root root of the data structure (tree)
-     * @param parent parent of this node
-     * @param previousMove move that would traverse from the parent node to this node
+     * @param gameState Current game state for node.
+     * @param root Root of tree
+     * @param parent Parent of this node
+     * @param previousMove Move that would traverse from the parent node to this node
      * */
     public Node (AIGameState gameState,
                  Node root,
@@ -87,8 +85,7 @@ public class Node {
                  PossibleLocations possibleLocations,
                  Heuristics.MoveFiltering moveFilter,
                  Heuristics.CoalitionReduction coalitionReduction,
-                 Heuristics.ExplorationCoefficient explorationCoefficient,
-                 Heuristics.EGreedyPlayouts eGreedyPlayouts) {
+                 Heuristics.ExplorationCoefficient explorationCoefficient) {
 
         this.gameState = gameState;
         this.root = root;
@@ -98,7 +95,6 @@ public class Node {
         this.moveFilter = moveFilter;
         this.coalitionReduction = coalitionReduction;
         this.explorationCoefficient = explorationCoefficient;
-        this.eGreedyPlayouts = eGreedyPlayouts;
 
 //      Win state reached (Can't expand anymore)
         if (!gameState.getWinner().isEmpty()) this.piece = parent.piece;
@@ -131,13 +127,20 @@ public class Node {
         return this.totalPlays;
     }
 
-    public List<Node> getChildren (){
-        return ImmutableList.copyOf(this.children);
+    /**
+     * Getter method
+     *
+     * @return Current state of possible locations for game state.
+     */
+    public PossibleLocations getPossibleLocations () {
+        return this.possibleLocations;
     }
 
     /**
-     * @return the child with the best win rate
-     * @throws IllegalStateException if there are no children
+     * Gets the child with the most visits, meaning that the child is the most promising.
+     *
+     * @return Child with the most visits.
+     * @throws IllegalStateException if node has no children
      * */
     public Node getBestChild () {
         // Post conditions will ensure score > -Infinity and bestChild will exist
@@ -165,17 +168,17 @@ public class Node {
 
     /**
      * Expansion stage of MCTS algorithm. Selects a random node from remaining moves.
+     *
      * @return a new Node to add to the data structure (tree)
      * @throws IllegalStateException if this function tries to expand on a fully expanded node
      * */
     public Node expandNode () {
-        if (remainingMoves.size() == 0) throw new IllegalStateException("Cannot call expandNode on fully expanded node.");
+        if (remainingMoves.isEmpty()) throw new IllegalStateException("Cannot call expandNode on fully expanded node.");
 
         Move nextMove = remainingMoves.get(new Random().nextInt(remainingMoves.size()));
         remainingMoves.remove(nextMove);
 
         AIGameState newGameState = this.gameState.advance(nextMove);
-
         PossibleLocations newPossibleLocations = this.possibleLocations.updateLocations(newGameState);
 
         Node newNode = new Node(
@@ -186,8 +189,7 @@ public class Node {
                 newPossibleLocations,
                 this.moveFilter,
                 this.coalitionReduction,
-                this.explorationCoefficient,
-                this.eGreedyPlayouts
+                this.explorationCoefficient
         );
         this.children.add(newNode);
 
@@ -195,9 +197,12 @@ public class Node {
     }
 
     /**
-     * Helper function to selectChild
+     * Helper function to selectChild. Calculate the Upper Confidence Bound for the node.
+     * This is used to focus on nodes which are more promising and avoid less promising
+     * nodes.
+     *
      * @param childNode childNode to evaluate UCB on
-     * @return evaluation of the UCB1 equation of the child node
+     * @return Evaluation of the UCB1 equation of the child node
      * @throws IllegalArgumentException if child is not defined
      * @throws IllegalArgumentException if the childNode given as parameter is not the child of the node.
      * */
@@ -206,13 +211,17 @@ public class Node {
                 this.explorationCoefficient.getMrXCoefficient() :
                 this.explorationCoefficient.getDetectiveCoefficient();
 
-        if (childNode == null) throw new IllegalArgumentException("Child node not defined.");
+        Objects.requireNonNull(childNode, "Child node not defined");
+
         if (!this.children.contains(childNode))
             throw new IllegalArgumentException("Node not child of current node.");
 
-        double avgScore = childNode.getTotalValue() / childNode.getTotalPlays();
+        double avgScore;
+//      Avoid divide by 0 error.
         if (childNode.getTotalPlays() == 0) {
             avgScore = 0;
+        } else {
+            avgScore = childNode.getTotalValue() / childNode.getTotalPlays();
         }
 
         double explorationFactor =
@@ -220,11 +229,6 @@ public class Node {
                         Math.log(this.getTotalPlays())
                                 / childNode.getTotalPlays()
                 ));
-
-//        // If player is a detective.
-//        if ( !this.getPiece().equals(this.root.getPiece()) ) {
-//            avgScore = 1 - avgScore;
-//        }
 
         return avgScore + explorationFactor;
     }
@@ -235,11 +239,12 @@ public class Node {
      * @throws IllegalStateException node has no children
      * */
     public Node selectChild () {
-        if (this.children.size() == 0) throw new IllegalStateException("Cannot select child as no children exist");
+        if (this.children.isEmpty())
+            throw new IllegalStateException("Cannot select child as no children exist");
 
-        double bestScore = Double.NEGATIVE_INFINITY;
 //      This is safe since it will always be overwritten in the for loop.
         Node bestChild = null;
+        double bestScore = Double.NEGATIVE_INFINITY;
 
         for (Node child : this.children){
             double currentUCB = this.calculateUCB(child);
@@ -258,24 +263,33 @@ public class Node {
 
     /**
      * Extract a winner from a given gameState
+     *
      * @throws IllegalArgumentException if given gameState is an initial game state
      * */
     static public Optional<Piece> getGameWinner (AIGameState gameState) {
-        if (gameState.getWinner().isEmpty()) return Optional.empty();
-        else if (gameState.getWinner().asList().get(0).isMrX()) return Optional.of(Piece.MrX.MRX);
-        else {
-            Optional<Move> optionalMove = gameState.getPreviousMove();
-            if (optionalMove.isEmpty()) {
-                throw new IllegalArgumentException("Cannot get detective winner of initial game state");
-            }
-            return Optional.of(optionalMove.get().commencedBy());
-        }
+        if (gameState.getWinner().isEmpty())
+            return Optional.empty();
+        else if (gameState.getWinner().asList().get(0).isMrX())
+            return Optional.of(Piece.MrX.MRX);
+        else
+            return gameState.getPreviousMove().map(Move::commencedBy);
     }
 
-    // Simulation/Playoff stage
-    public Piece simulateGame () {
-        AIGameState currentGameState = this.gameState;
-        PossibleLocations currentPossibleLocations = this.possibleLocations;
+    /**
+     * Simulates a game from the current game state.
+     *
+     * @param gameState The current game state from a Node.
+     * @param possibleLocations The current Set of possible locations for Mr X.
+     *                          Used for E-Greedy Playouts.
+     * @param eGreedyPlayouts A EGreedyPlayouts class to define how moves should be picked.
+     * @return Value of simulated game (winning piece)
+     */
+    public static Piece simulateGame (
+            AIGameState gameState,
+            PossibleLocations possibleLocations,
+            Heuristics.EGreedyPlayouts eGreedyPlayouts) {
+        AIGameState currentGameState = gameState;
+        PossibleLocations currentPossibleLocations = possibleLocations;
 
         //Anchor case
         if (Node.getGameWinner(currentGameState).isPresent())
@@ -283,14 +297,14 @@ public class Node {
 
         while (currentGameState.getWinner().isEmpty()) {
             Move move;
-            if (new Random().nextDouble() > 0.2) {
+            if (new Random().nextDouble() > eGreedyPlayouts.EPSILON) {
                 if (currentGameState.getAvailableMoves().asList().get(0).commencedBy().isMrX()) {
-                    move = this.eGreedyPlayouts.getMrXBestMove(
+                    move = eGreedyPlayouts.getMrXBestMove(
                         currentGameState.getAvailableMoves(),
                         currentGameState
                     );
                 } else {
-                    move = this.eGreedyPlayouts.getDetectiveBestMove(
+                    move = eGreedyPlayouts.getDetectiveBestMove(
                         currentGameState.getAvailableMoves(),
                         currentPossibleLocations
                     );
@@ -305,11 +319,14 @@ public class Node {
             currentPossibleLocations = currentPossibleLocations.updateLocations(currentGameState);
         }
 
-        //Recursive case
         return Node.getGameWinner(currentGameState).orElseThrow();
     }
 
-    // Backpropagation stage
+    /**
+     * Back-propagates result from simulated game up the tree to the root.
+     * @param value The Piece which won the simulated game
+     * @return Recurse up tree and returns value at root of tree.
+     */
     public Piece backPropagation(Piece value) {
         this.totalPlays += 1;
 
@@ -318,16 +335,9 @@ public class Node {
             this.totalValue += this.coalitionReduction.calculateValue(this.piece, value);
             return value;
         } else {
-//          Apply Coalition Reduction
             this.totalValue += this.coalitionReduction.calculateValue(this.parent.piece, value);
-//            if (this.parent.parent == null && this.root != this) {
-//                System.out.println("--------------------------------------------------------------------------");
-//                System.out.println(String.format("Winner of game: %s, Parent of node: %s, Root of node: %s Value added: %s", value, this.parent.piece, this.root.piece, this.coalitionReduction.calculateValue(this.parent.piece, value)));
-//                System.out.println(String.format("Move: %s, New plays: %s, New value: %s", this.getPreviousMove(), this.getTotalPlays(), this.getTotalValue()));
-//            }
 
-
-//          Upwards recursion
+//          Recurse value to top of tree.
             return this.parent.backPropagation(value);
         }
 

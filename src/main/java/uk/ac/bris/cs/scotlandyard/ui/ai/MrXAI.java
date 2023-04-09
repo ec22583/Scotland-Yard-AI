@@ -30,8 +30,7 @@ public class MrXAI implements AI {
                 this.possibleLocations,
                 new Heuristics.MoveFiltering(),
                 new Heuristics.CoalitionReduction(),
-                new Heuristics.ExplorationCoefficient(),
-                new Heuristics.EGreedyPlayouts()
+                new Heuristics.ExplorationCoefficient()
         );
 
         AI.runThreads(mctsTree, timeoutPair);

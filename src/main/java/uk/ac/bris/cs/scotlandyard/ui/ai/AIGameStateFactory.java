@@ -3,12 +3,10 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableTable;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.*;
 
 // A factory to create game states such that the AIs can use it
@@ -408,8 +406,8 @@ public class AIGameStateFactory {
 			return doubleMoves;
 		}
 
+		@Nonnull
 		@Override
-		@Nullable
 		public Optional<Move> getPreviousMove() {
 			return Optional.ofNullable(this.previousMove);
 		}
@@ -444,6 +442,7 @@ public class AIGameStateFactory {
 			if (winners.isEmpty()) {
 				List<Player> players = new ArrayList<>(detectives.size() + 1);
 
+//				Converts all remaining pieces into corresponding players.
 				if (remaining.contains(mrX.piece())) {
 					players.add(mrX);
 				} else {
@@ -453,11 +452,6 @@ public class AIGameStateFactory {
 						}
 					}
 				}
-
-//				Converts all remaining pieces into corresponding players.
-//				List<Player> players = playerList.stream()
-//						.filter(p -> remaining.contains(p.piece()))
-//						.toList();
 
 				for (Player player : players) {
 					builder.addAll(MyGameState.makeSingleMoves(setup, detectiveLocations, player, player.location()));
@@ -472,7 +466,7 @@ public class AIGameStateFactory {
 		}
 
 		/**
-		 * Updates the current log book with a new log book with current move appended.
+		 * Updates the current log book to a new log book with current move appended.
 		 *
 		 * @param move Move to be carried out
 		 * @return New log book with new log entry for move (if commenced by mrX)

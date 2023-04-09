@@ -56,7 +56,7 @@ public class DistancesTest extends AITestBase {
         assertThat(distancesSingleton.get(62,48))
                 .isEqualTo(1);
 
-        //Then 61 -> 48 = 2 moves by visual inspection. Therefore transitive law applies
+        //Then 61 -> 48 = 2 moves by visual inspection. Therefore, transitive law applies
 
         assertThat(distancesSingleton.get(61,48))
                 .isEqualTo(2);

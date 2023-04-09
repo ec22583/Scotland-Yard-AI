@@ -3,17 +3,13 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Table;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
-import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 
 //Wrapper class for all Heuristics (classes)
@@ -40,42 +36,32 @@ public interface Heuristics {
             boolean execute (Move move, AIGameState gameState);
         }
 
-        public class RemoveFromFirstTwoRounds implements FilterStrategy{
-            @Override @Nonnull
+        public static class RemoveFromFirstTwoRounds implements FilterStrategy{
+            @Override
             public boolean execute (Move move, AIGameState gameState){
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
-                if (tickets.contains(ScotlandYard.Ticket.SECRET) &&
-                        gameState.getMrXTravelLog().size() <= 2 ) return false;
-                else return true;
+                return !tickets.contains(ScotlandYard.Ticket.SECRET) ||
+                        gameState.getMrXTravelLog().size() > 2;
             }
         }
 
-        public class RemoveFromRevealingRound implements FilterStrategy{
-            @Override @Nonnull
+        public static class RemoveFromRevealingRound implements FilterStrategy{
+            @Override
             public boolean execute (Move move, AIGameState gameState){
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
 //              Check if move at current turn is a reveal move
-                if (tickets.contains(ScotlandYard.Ticket.SECRET) && gameState
+                return !tickets.contains(ScotlandYard.Ticket.SECRET) || !gameState
                         .getSetup()
                         .moves
                         .get(gameState.getMrXTravelLog().size() - 1) // get starts at index 0
-                        .equals(true)
-                        ) {
-                    return false;
-                }
-                else {
-                    return true;
-                }
+                        .equals(true);
             }
         }
 
-        /**
-         * @throws IllegalArgumentException if edge on a graph isn't found
-         * */
-        public class AllPossibleLocationsHaveTaxis implements FilterStrategy{
-            @Override @Nonnull
+        public static class AllPossibleLocationsHaveTaxis implements FilterStrategy{
+            @Override
             public boolean execute (Move move, AIGameState gameState){
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
                 ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph =
@@ -88,16 +74,15 @@ public interface Heuristics {
                         (edges
                         .stream()
                         .parallel()
-                        .allMatch(e -> {
-                            Optional<ImmutableSet<ScotlandYard.Transport>> optionalTransports = graph.edgeValue(e);
-                            if (optionalTransports.isEmpty())
-                                throw new IllegalArgumentException("Cannot find edge on graph");
-                            return (optionalTransports.get().contains(ScotlandYard.Transport.TAXI));
-                        })));
+                        .allMatch(e -> graph
+                                .edgeValue(e)
+                                .orElseThrow()
+                                .contains(ScotlandYard.Transport.TAXI)
+                        )));
             }
         }
 
-        private List<FilterStrategy> filterStrategies = ImmutableList.of(
+        final private List<FilterStrategy> filterStrategies = ImmutableList.of(
                 new RemoveFromFirstTwoRounds(),
                 new RemoveFromRevealingRound(),
                 new AllPossibleLocationsHaveTaxis()
@@ -110,7 +95,7 @@ public interface Heuristics {
         /**
          *
          * @param move Move to be checked
-         * @param gameState gamestate to pass in any required information for the filter algorithms
+         * @param gameState game state to pass in any required information for the filter algorithms
          * @return boolean if move satisfies all filtering
          * */
         public boolean checkMove (Move move, AIGameState gameState) {
@@ -155,12 +140,12 @@ public interface Heuristics {
     }
 
     /**
-     * Epsilon greedy playout
+     * Epsilon greedy playout.
+     * Uses domain knowledge to make move choices in playouts more realistic.
      * */
     class EGreedyPlayouts {
-        //TODO: I have designed a framework for E-Greedy playouts.
-        private double EPSILON = 0.2;
-        private DistancesSingleton distances;
+        final public double EPSILON = 0.2;
+        final private DistancesSingleton distances;
 
         public EGreedyPlayouts() {
             this.distances = DistancesSingleton.getInstance();
@@ -197,7 +182,6 @@ public interface Heuristics {
             }
 
             return bestMove;
-//            return moves.asList().get(new Random().nextInt(moves.size()));
         }
 
          /**
@@ -207,8 +191,6 @@ public interface Heuristics {
          * recently inspected best Move
          * */
         public Move getMrXBestMove(ImmutableSet<Move> moves, AIGameState gameState) {
-//            return moves.asList().get(new Random().nextInt(moves.size()));
-
             DistancesSingleton distances = DistancesSingleton.getInstance();
             List<Integer> detectiveLocations = gameState.getDetectiveLocations();
 
@@ -246,7 +228,7 @@ public interface Heuristics {
          *
          * @param currentPiece the root piece as used in the node data structure
          * @param value the piece to compare against the root piece
-         * @returns a double giving the evaluation score for that win
+         * @return a double giving the evaluation score for that win
          * */
         public double calculateValue (Piece currentPiece, Piece value) {
             //if MrX or a matching detective piece

@@ -1,7 +1,5 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
-import com.google.common.collect.ImmutableTable;
-import com.google.common.collect.Table;
 import com.google.common.io.Resources;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
@@ -15,7 +13,7 @@ public class DistancesSingleton {
     static private DistancesSingleton instance = null;
 
     //Variables wrapped inside the singleton
-	private int[][] distancesArray;
+	final private int[][] distancesArray;
 
     private DistancesSingleton(){
         distancesArray = readDistances();
