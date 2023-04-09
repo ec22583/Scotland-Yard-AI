@@ -15,6 +15,7 @@ Adapted for use in the open task.
 @Suite.SuiteClasses({
         BoardHelpersTest.class,
         PossibleLocationsTest.class,
-        HeuristicsTest.class
+        HeuristicsTest.class,
+        DistancesTest.class
 })
 public class AllTest {}
