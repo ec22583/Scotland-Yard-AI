@@ -61,30 +61,30 @@ public class DetectiveAI implements AI{
 //      Remove any already winning game states since they are not possible.
         gameStates = gameStates.stream().filter(s -> s.left().getWinner().isEmpty()).toList();
 
-        Pair<AIGameState, Integer> possibleGameState = null;
-        double averageDistance = Integer.MAX_VALUE;
-        for (Pair<AIGameState, Integer> gameStatePair : gameStates) {
-            List<Integer> detectiveLocations = gameStatePair.left().getDetectiveLocations();
-             double currentAverageDistance = detectiveLocations
-                     .stream()
-                     .map(l -> distances.get(l, gameStatePair.right()))
-                     .mapToInt(Integer::intValue)
-                     .average()
-                     .orElseThrow();
+//        Pair<AIGameState, Integer> possibleGameState = null;
+//        int maximinDistance = Integer.MIN_VALUE;
+//        for (Pair<AIGameState, Integer> gameStatePair : gameStates) {
+//            List<Integer> detectiveLocations = gameStatePair.left().getDetectiveLocations();
+//            int currentMinimumDistance = detectiveLocations
+//                    .stream()
+//                    .map(l -> distances.get(l, gameStatePair.right()))
+//                    .mapToInt(Integer::intValue)
+//                    .min()
+//                    .orElseThrow();
+//
+//             if (currentMinimumDistance > maximinDistance) {
+//                 maximinDistance = currentMinimumDistance;
+//                 possibleGameState = gameStatePair;
+//             }
+//        }
 
-             if (currentAverageDistance < averageDistance) {
-                 averageDistance = currentAverageDistance;
-                 possibleGameState = gameStatePair;
-             }
-        }
-
-//        AIGameState randomGameState = gameStates.get(
-//                new Random().nextInt(gameStates.size())
-//        ).left();
+        AIGameState randomGameState = gameStates.get(
+                new Random().nextInt(gameStates.size())
+        ).left();
 
         //create a Node with all heuristics fed in
         this.mctsTree = new Node(
-                possibleGameState.left(),
+                randomGameState,
                 this.possibleLocations,
                 new Heuristics.MoveFiltering(),
                 new Heuristics.CoalitionReduction(),
