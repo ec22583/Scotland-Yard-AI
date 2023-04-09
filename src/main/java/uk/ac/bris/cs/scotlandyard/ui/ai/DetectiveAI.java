@@ -1,15 +1,11 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
-import com.google.common.collect.ImmutableTable;
-import com.google.common.collect.Table;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
-import uk.ac.bris.cs.scotlandyard.model.Player;
 
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class DetectiveAI implements AI{
@@ -17,35 +13,11 @@ public class DetectiveAI implements AI{
     final private AIGameStateFactory aiGameStateFactory;
     final private PossibleLocationsFactory possibleLocationsFactory;
     final private DistancesSingleton distances;
-    private Node mctsTree;
 
     public DetectiveAI (DistancesSingleton distances) {
         this.distances = distances;
         this.aiGameStateFactory = new AIGameStateFactory();
         this.possibleLocationsFactory = new PossibleLocationsFactory();
-    }
-
-    //Helper function of generateBestMove
-    private void sleepThread(Pair<Long, TimeUnit> timeoutPair){
-        try {
-//          Sleeps the program for the (time - 250 ms).
-            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 250);
-        } catch (InterruptedException e) {
-            // Handles if an interrupt is thrown towards the current method while asleep.
-//            Thread.currentThread().interrupt();
-        }
-    }
-
-    //Runs MCTS and AI Threads
-    public void runThreads(Pair<Long, TimeUnit> timeoutPair){
-        Thread m = Thread.currentThread();
-        MCTS mcts = new MCTS(mctsTree, m);
-
-//      Starts thread that runs the Monte Carlo Tree Search.
-        mcts.start();
-        this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run
-
-        if (mcts.isAlive()) mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
     }
 
     @Override
@@ -83,7 +55,7 @@ public class DetectiveAI implements AI{
         ).left();
 
         //create a Node with all heuristics fed in
-        this.mctsTree = new Node(
+        Node mctsTree = new Node(
                 randomGameState,
                 this.possibleLocations,
                 new Heuristics.MoveFiltering(),
@@ -92,8 +64,8 @@ public class DetectiveAI implements AI{
                 new Heuristics.EGreedyPlayouts()
         );
 
-        runThreads(timeoutPair);
+        AI.runThreads(mctsTree, timeoutPair);
 
-        return this.mctsTree.getBestChild().getPreviousMove();
+        return mctsTree.getBestChild().getPreviousMove();
     }
 }
