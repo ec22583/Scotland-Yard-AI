@@ -22,11 +22,14 @@ public class AITestBase {
     private static AIGameStateFactory aiGameStateFactory;
     private static ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> defaultGraph;
 
+    private static DistancesSingleton distancesSingleton;
+
     @BeforeClass
     public static void setUp () {
         possibleLocationsFactory = new PossibleLocationsFactory();
         gameStateFactory = new MyGameStateFactory();
         aiGameStateFactory = new AIGameStateFactory();
+        distancesSingleton = DistancesSingleton.getInstance();
 
         try {
 			defaultGraph = readGraph(Resources.toString(Resources.getResource(
@@ -34,6 +37,8 @@ public class AITestBase {
 					StandardCharsets.UTF_8));
 		} catch (IOException e) { throw new RuntimeException("Unable to read game graph", e); }
     }
+
+    public static DistancesSingleton getDistancesSingleton() {return distancesSingleton;}
 
     public static MyGameStateFactory getGameStateFactory () {
         return gameStateFactory;
