@@ -48,7 +48,7 @@ public class PossibleLocationsFactory {
         }
 
         /**
-         * Algorithm for possible new locations of MrX after his last definite location
+         * Algorithm for possible new locations of MrX from current possible locations.
          * Helper function for generateDetectiveGameStates
          * @param usedTicket ticket used by MrX
          * @param detectiveLocations list of locations of the detectives
