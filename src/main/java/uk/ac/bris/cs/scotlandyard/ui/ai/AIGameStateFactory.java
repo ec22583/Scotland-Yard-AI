@@ -8,6 +8,7 @@ import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 
 // A factory to create game states such that the AIs can use it
@@ -408,6 +409,7 @@ public class AIGameStateFactory {
 		}
 
 		@Override
+		@Nullable
 		public Optional<Move> getPreviousMove() {
 			return Optional.ofNullable(this.previousMove);
 		}
@@ -430,11 +432,11 @@ public class AIGameStateFactory {
 		 * @return ImmutableSet of all possible moves which can be made.
 		 */
 		private static ImmutableSet<Move> generateAvailableMoves(List<Player> detectives,
-																 Player mrX,
-																 Set<Piece> remaining,
-																 Set<Piece> winners,
-																 List<LogEntry> log,
-																 GameSetup setup) {
+																  Player mrX,
+																  Set<Piece> remaining,
+																  Set<Piece> winners,
+																  List<LogEntry> log,
+																  GameSetup setup) {
 			ImmutableSet.Builder<Move> builder = ImmutableSet.builder();
 			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(detectives);
 
@@ -653,10 +655,7 @@ public class AIGameStateFactory {
 			}
 
 			Piece piece = move.commencedBy();
-			Optional<Player> playerOptional = getPlayerFromPiece(piece);
-
-			if (playerOptional.isEmpty()) throw new IllegalArgumentException("Move on non existent player");
-			Player player = playerOptional.get();
+			Player player = getPlayerFromPiece(piece).orElseThrow();
 
 			List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 

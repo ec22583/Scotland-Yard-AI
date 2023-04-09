@@ -13,9 +13,10 @@ import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 
-//Wrapper class for all Heuristics (interfaces)
+//Wrapper class for all Heuristics (classes)
 public interface Heuristics {
 
 
@@ -24,6 +25,7 @@ public interface Heuristics {
      * */
     class MoveFiltering {
 
+        //Variables used exclusively in unit testing
         public final int REMOVE_FROM_FIRST_TWO_ROUNDS = 0;
         public final int REMOVE_FROM_REVEALING_ROUND = 1;
         public final int ALL_POSSIBLE_LOCATIONS_HAVE_TAXIS = 2;
@@ -157,59 +159,76 @@ public interface Heuristics {
      * */
     class EGreedyPlayouts {
         //TODO: I have designed a framework for E-Greedy playouts.
+        private DistancesSingleton distances;
 
-        //For Detectives
-        public Move getDetectiveBestMove (
-                ImmutableSet<Move> moves,
-                AIGameState gameState,
-                PossibleLocations possibleLocations ){
-            final Table<Integer, Integer, Integer> distances = DistancesSingleton.getInstance().getDistances();
-            final ImmutableSet<Integer> locations = possibleLocations.getLocations();
-
-            int minimumDistance = Integer.MAX_VALUE;
-            Move bestMove = moves.asList().get(0);
-            MoveVisitors.DestinationVisitor destinationVisitor = new MoveVisitors.DestinationVisitor();
-
-            for (Move move : moves) {
-                int destination = move.accept(destinationVisitor);
-
-//              Not using stream chain due to worse performance.
-                int sumDistance = 0;
-                for (int l : locations) {
-                    sumDistance += distances.get(l, destination);
-                }
-
-                if (sumDistance < minimumDistance) {
-                    minimumDistance = sumDistance;
-                    bestMove = move;
-                }
-            }
-
-            return bestMove;
+        public EGreedyPlayouts() {
+            this.distances = DistancesSingleton.getInstance();
         }
 
-        //For MrX
+        /**
+         * Heuristic that minimizes the distance to MrX.
+         * Select the move that minimizes the sum of the distances to all possible
+         * locations to MrX. If there are multiple minimum solution, choose the most
+         * recently inspected best Move
+         * */
+        public Move getDetectiveBestMove (
+                ImmutableSet<Move> moves,
+                PossibleLocations possibleLocations ){
+//            ImmutableSet<Integer> locations = possibleLocations.getLocations();
+//
+//            //Assume max distance
+//            int minimumDistance = Integer.MAX_VALUE;
+//            Move bestMove = moves.asList().get(0);
+//            MoveVisitors.DestinationVisitor destinationVisitor = new MoveVisitors.DestinationVisitor();
+//
+//            for (Move move : moves) {
+//                int destination = move.accept(destinationVisitor);
+//                int sumDistance = 0;
+//
+////              Not using stream chain due to worse performance.
+//                for (int location : locations) {
+//                    sumDistance += distances.get(location, destination);
+//                }
+//                if (sumDistance < minimumDistance) {
+//                    minimumDistance = sumDistance;
+//                    bestMove = move;
+//                }
+//            }
+//
+//            return bestMove;
+            return moves.asList().get(new Random().nextInt(moves.size()));
+        }
+
+         /**
+         * Heuristic that maximises the distances to detectives.
+         * Select the move that maximises the sum of the distances to all possible
+         * locations to detectives. If there are multiple minimum solution, choose the most
+         * recently inspected best Move
+         * */
         public Move getMrXBestMove(ImmutableSet<Move> moves, AIGameState gameState) {
-            Table<Integer, Integer, Integer> distances = DistancesSingleton.getInstance().getDistances();
-            List<Integer> detectiveLocations = gameState.getDetectiveLocations();
-
-            int maximinDistance = Integer.MIN_VALUE;
-            Move bestMove = moves.asList().get(0);
-            for (Move move: moves) {
-                int destination = move.accept(new MoveVisitors.DestinationVisitor());
-                int minDistance = detectiveLocations
-                        .stream()
-                        .map(l -> distances.get(l, destination))
-                        .mapToInt(Integer::intValue)
-                        .min()
-                        .orElseThrow();
-                if (minDistance > maximinDistance) {
-                    maximinDistance = minDistance;
-                    bestMove = move;
-                }
-            }
-
-            return bestMove;
+            return moves.asList().get(new Random().nextInt(moves.size()));
+//
+//            DistancesSingleton distances = DistancesSingleton.getInstance();
+//            List<Integer> detectiveLocations = gameState.getDetectiveLocations();
+//
+//            //Assume closest distance (0)
+//            int maximinDistance = 0;
+//            Move bestMove = moves.asList().get(0);
+//            for (Move move: moves) {
+//                int destination = move.accept(new MoveVisitors.DestinationVisitor());
+//                int minDistance = detectiveLocations
+//                        .stream()
+//                        .map(l -> distances.get(l, destination))
+//                        .mapToInt(Integer::intValue)
+//                        .min()
+//                        .orElseThrow();
+//                if (minDistance > maximinDistance) {
+//                    maximinDistance = minDistance;
+//                    bestMove = move;
+//                }
+//            }
+//
+//            return bestMove;
         }
     }
 
@@ -219,7 +238,7 @@ public interface Heuristics {
      * */
     class CoalitionReduction {
 
-        private final double r = 0.4;
+        private final double r = 0.5;
         /**
          * Application of Coalition Reduction. If root piece is detective but not the value piece then
          * give only (1-r) times the weighting on the value.

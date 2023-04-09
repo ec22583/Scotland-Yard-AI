@@ -15,10 +15,10 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 public class MyAi implements Ai {
 	private MrXAI mrXAI;
 	private DetectiveAI detectiveAI;
-	private Table<Integer, Integer, Integer> distances;
+	private DistancesSingleton distances;
 
 	public void onStart() {
-		this.distances = DistancesSingleton.getInstance().getDistances();
+		this.distances = DistancesSingleton.getInstance();
 		this.mrXAI = new MrXAI();
 		this.detectiveAI = new DetectiveAI(this.distances);
 
@@ -26,7 +26,7 @@ public class MyAi implements Ai {
 
 	@Nonnull @Override
 	public String name() {
-		return "Name me!";
+		return "AI<MCTS>";
 	}
 
 	@Nonnull @Override

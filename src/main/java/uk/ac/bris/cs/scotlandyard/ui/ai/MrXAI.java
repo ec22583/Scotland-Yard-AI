@@ -29,21 +29,24 @@ public class MrXAI implements AI {
     //Helper function of generateBestMove
     private void sleepThread(Pair<Long, TimeUnit> timeoutPair){
         try {
-//          Sleeps the program for the (time - 500 ms).
-            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 500);
+//          Sleeps the program for the (time - 250 ms).
+            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 250);
         } catch (InterruptedException e) {
             // Handles if an interrupt is thrown towards the current method while asleep.
-            Thread.currentThread().interrupt();
+//            Thread.currentThread().interrupt();
         }
     }
 
     public void runThreads(Pair<Long, TimeUnit> timeoutPair){
-        MCTS mcts = new MCTS(mctsTree);
+
+        Thread m = Thread.currentThread();
+        MCTS mcts = new MCTS(mctsTree, m);
 
 //      Starts thread that runs the Monte Carlo Tree Search.
         mcts.start();
         this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run
-        mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
+
+        if (mcts.isAlive()) mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
     }
 
     //Evaluate the Best move from a Game tree

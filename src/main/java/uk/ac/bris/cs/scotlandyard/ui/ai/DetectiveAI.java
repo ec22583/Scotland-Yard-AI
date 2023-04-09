@@ -16,10 +16,10 @@ public class DetectiveAI implements AI{
     private PossibleLocations possibleLocations;
     final private AIGameStateFactory aiGameStateFactory;
     final private PossibleLocationsFactory possibleLocationsFactory;
-    final private Table<Integer, Integer, Integer> distances;
+    final private DistancesSingleton distances;
     private Node mctsTree;
 
-    public DetectiveAI (Table<Integer, Integer, Integer> distances) {
+    public DetectiveAI (DistancesSingleton distances) {
         this.distances = distances;
         this.aiGameStateFactory = new AIGameStateFactory();
         this.possibleLocationsFactory = new PossibleLocationsFactory();
@@ -28,22 +28,24 @@ public class DetectiveAI implements AI{
     //Helper function of generateBestMove
     private void sleepThread(Pair<Long, TimeUnit> timeoutPair){
         try {
-//          Sleeps the program for the (time - 500 ms).
-            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 500);
+//          Sleeps the program for the (time - 250 ms).
+            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 250);
         } catch (InterruptedException e) {
             // Handles if an interrupt is thrown towards the current method while asleep.
-            Thread.currentThread().interrupt();
+//            Thread.currentThread().interrupt();
         }
     }
 
     //Runs MCTS and AI Threads
     public void runThreads(Pair<Long, TimeUnit> timeoutPair){
-        MCTS mcts = new MCTS(mctsTree);
+        Thread m = Thread.currentThread();
+        MCTS mcts = new MCTS(mctsTree, m);
 
 //      Starts thread that runs the Monte Carlo Tree Search.
         mcts.start();
         this.sleepThread(timeoutPair); //Sleeps program to let MCTS algorithm run
-        mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
+
+        if (mcts.isAlive()) mcts.interrupt(); // Interrupts the algorithm which causes it to stop testing paths.
     }
 
     @Override
@@ -60,7 +62,7 @@ public class DetectiveAI implements AI{
         gameStates = gameStates.stream().filter(s -> s.left().getWinner().isEmpty()).toList();
 
         Pair<AIGameState, Integer> possibleGameState = null;
-        double averageDistance = Integer.MIN_VALUE;
+        double averageDistance = Integer.MAX_VALUE;
         for (Pair<AIGameState, Integer> gameStatePair : gameStates) {
             List<Integer> detectiveLocations = gameStatePair.left().getDetectiveLocations();
              double currentAverageDistance = detectiveLocations
@@ -70,7 +72,7 @@ public class DetectiveAI implements AI{
                      .average()
                      .orElseThrow();
 
-             if (currentAverageDistance > averageDistance) {
+             if (currentAverageDistance < averageDistance) {
                  averageDistance = currentAverageDistance;
                  possibleGameState = gameStatePair;
              }
@@ -80,6 +82,7 @@ public class DetectiveAI implements AI{
 //                new Random().nextInt(gameStates.size())
 //        ).left();
 
+        //create a Node with all heuristics fed in
         this.mctsTree = new Node(
                 possibleGameState.left(),
                 this.possibleLocations,

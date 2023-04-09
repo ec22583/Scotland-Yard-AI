@@ -291,7 +291,6 @@ public class Node {
             } else {
                 move = this.eGreedyPlayouts.getDetectiveBestMove(
                     currentGameState.getAvailableMoves(),
-                    currentGameState,
                     currentPossibleLocations
                 );
             }

@@ -6,23 +6,27 @@ import java.util.Optional;
 
 // MCTS Algorithm (Monte Carlo tree search)
 public class MCTS extends Thread {
+
+    private Thread parentThread;
     final private Node mctsTree;
 
-    public MCTS (Node mctsTree) {
+    public MCTS (Node mctsTree, Thread parentThread) {
         this.mctsTree = mctsTree;
+        this.parentThread = parentThread;
     }
 
-
+    /**
+     * @throws IllegalStateException Can't get winning piece of a game state
+     * */
     public void iterationAlgorithm () {
         Node node = this.mctsTree;
+        Piece gameValue;
 
         // Selection Stage.
         // Stops selecting when node is not fully expanded or game is already won.
         while (node.isFullyExpanded() && node.isNotGameOver()) {
             node = node.selectChild();
         }
-
-        Piece gameValue;
 
 //      If game state is not a winning game state.
         // Else don't run expansion simulation or backpropagation
@@ -49,11 +53,18 @@ public class MCTS extends Thread {
     @Override
     public void run () {
         int numIterations = 0;
-        while(!Thread.interrupted()) {
+
+        //Cap numIterations at 25000 because there is no noticable behavioural improvements after this point
+        //Additionally it is also to make AI take their turn faster towards the end of the game
+        while(!Thread.interrupted() && (numIterations < 25000)) {
             numIterations++;
             this.iterationAlgorithm();
         }
         System.out.println("Number of iterations: " + numIterations);
+
+        if (numIterations >= 25000) {
+            this.parentThread.interrupt();
+        }
     }
 
 }

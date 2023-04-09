@@ -14,18 +14,19 @@ public class DistancesSingleton {
     static private DistancesSingleton instance = null;
 
     //Variables wrapped inside the singleton
-    private Table<Integer, Integer, Integer> distances;
+	private int[][] distancesArray;
 
     private DistancesSingleton(){
-        distances = readDistances();
+        distancesArray = readDistances();
     }
 
     /**
      * reads distances from the distances.txt file and put it into the distances property for other instances to use
      * @return the distance table
      * @throws IllegalStateException if the distances.txt file is not in the correct format
+	 * @throws IOException if the distances.txt can't be read
      * */
-    private static Table<Integer, Integer, Integer> readDistances () {
+    private static int[][] readDistances () {
 		try {
 			String file = Resources.toString(
 							Resources.getResource("distances.txt"),
@@ -34,7 +35,8 @@ public class DistancesSingleton {
 
 			String[] distanceStrings = file.split("\n");
 
-			ImmutableTable.Builder<Integer, Integer, Integer> builder = ImmutableTable.builder();
+
+			int[][] distancesArray = new int[199][199];
 			for (int i = 0; i < distanceStrings.length; i++) {
 				String distanceString = distanceStrings[i];
 
@@ -46,20 +48,28 @@ public class DistancesSingleton {
 								"1. End location.\n" +
 								"2. Distance"
 				);
-				builder.put(distance.get(0), distance.get(1), distance.get(2));
+
+
+				distancesArray[distance.get(0) - 1][distance.get(1) - 1] = distance.get(2);
+
 			}
-			ImmutableTable<Integer, Integer, Integer> distances = builder.build();
-			return distances;
-		} catch (IOException e) {
+			return distancesArray;
+		}
+		catch (IOException e) {
 			System.err.println("Cannot read from distances.txt");
 			System.exit(1);
 			return null;
 		}
 	}
 
-    public Table<Integer, Integer, Integer> getDistances(){
-        return distances;
-    }
+	/**
+	 * @param l1 location 1
+	 * @param l2 location 2
+	 * @return distances between location 1 and location 2
+	 * */
+	public int get (int l1, int l2) {
+		return this.distancesArray[l1 - 1][l2 - 1];
+	}
 
     static public DistancesSingleton getInstance(){
         if (DistancesSingleton.instance == null){
