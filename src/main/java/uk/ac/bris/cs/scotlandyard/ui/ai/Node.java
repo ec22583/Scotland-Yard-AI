@@ -22,6 +22,7 @@ public class Node {
 
 //  Used to reduce emphasis on nodes traversed by other threads.
     private int virtualLoss;
+
     final private List<Node> children;
     final private Node parent;
     final private Node root;

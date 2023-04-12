@@ -7,7 +7,7 @@ import java.util.Optional;
 
 // MCTS Algorithm (Monte Carlo tree search)
 public class MCTS extends Thread {
-    private ThreadController controller;
+    final private ThreadController controller;
     final private Node mctsTree;
     final Heuristics.EGreedyPlayouts eGreedyPlayouts;
 
@@ -62,10 +62,8 @@ public class MCTS extends Thread {
     public void run () {
         //Cap numIterations at 30000 because there is no noticeable behavioural improvements after this point
         //Additionally it is also to make AI take their turn faster towards the end of the game
-        while(!Thread.interrupted() && controller.getIterations() < 30000) {
-            this.iterationAlgorithm();
-            controller.incrementIteration();
-        }
+        this.iterationAlgorithm();
+        controller.incrementIteration();
     }
 
 }

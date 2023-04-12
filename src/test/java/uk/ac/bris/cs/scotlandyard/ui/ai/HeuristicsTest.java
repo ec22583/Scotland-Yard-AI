@@ -180,7 +180,7 @@ public class HeuristicsTest extends AITestBase {
     }
 
     /** test Move Filtering - RemoveFromRevealingRound round 3
-     * Filter out any secret tickets at round 3 because it si revealing round
+     * Filter out any secret tickets at round 3 because it is revealing round
      * */
     @Test public void testReavlingRoundFilterWorksRound3() {
         PossibleLocations possibleLocations =

@@ -1,60 +1,49 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 //Not to be confused with "Ai" which is implemented by MyAi
 public interface AI {
-
     /**
-     * Helper function to sleep the current thread for the allotted time.
-     * @param timeoutPair The length of time to sleep the thread for - 250 ms.
-     */
-    private static void sleepThread(Pair<Long, TimeUnit> timeoutPair){
-        try {
-//          Sleeps the program for the (time - 250 ms).
-            Thread.sleep(TimeUnit.MILLISECONDS.convert(timeoutPair.left(), timeoutPair.right()) - 250);
-        } catch (InterruptedException e) {
-//          Handles if an interrupt is thrown towards the current method while asleep.
-//          Leaving this blank is fine since continuing the program if interrupt is expected behaviour.
-        }
-    }
-
-
-    /**
-     * @param mctsTree the MCTS tree in which the agent controls
+     * @param mctsTree the MCTS tree in which the agent uses
      * @param timeoutPair amount of time the thread lasts for
      * */
     static void runThreads(Node mctsTree, Pair<Long, TimeUnit> timeoutPair){
         try {
             ThreadController controller = new ThreadController();
+            MCTS mcts = new MCTS(mctsTree, controller);
 
             //cores in the cpu
             final int threadsUsed = Runtime.getRuntime().availableProcessors();
             //Runs for allocated turn time - 100ms
             final long milliseconds = timeoutPair.right().toMillis(timeoutPair.left()) - 100;
 
-            System.out.println("Number of \'available processors\' - 2: " + threadsUsed);
+            System.out.println("Number of \'available processors\': " + threadsUsed);
 
             ExecutorService executorService = Executors.newFixedThreadPool(threadsUsed);
 
             //Submit MCTS tasks per thread
-            for (int i = 0; i < threadsUsed; i++) {
-                executorService.submit(new MCTS(mctsTree, controller));
+            //This is safe to do because mcts isn't stateful and therefore immune to data races
+            for (int i = 0; i < 30000; i++){
+                executorService.submit(mcts);
             }
 
-
-
+            executorService.shutdown();
             executorService.awaitTermination(milliseconds, TimeUnit.MILLISECONDS);
+            executorService.shutdownNow();
+            
 
             System.out.format("Total number of iterations: %s\n", controller.getIterations());
 //      Not expected to receive an interrupt on current thread so just return early.
-        } catch (InterruptedException e) {}
+        }
+        catch (InterruptedException e) {
+            System.out.println("Current thread interrupted while sleeping");
+        }
     }
 
     Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair);

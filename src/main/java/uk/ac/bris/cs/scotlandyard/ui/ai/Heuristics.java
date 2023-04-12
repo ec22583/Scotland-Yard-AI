@@ -5,10 +5,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
@@ -37,7 +40,7 @@ public interface Heuristics {
         }
 
         public static class RemoveFromFirstTwoRounds implements FilterStrategy{
-            @Override
+            @Override @NonNull
             public boolean execute (Move move, AIGameState gameState){
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
@@ -47,21 +50,28 @@ public interface Heuristics {
         }
 
         public static class RemoveFromRevealingRound implements FilterStrategy{
-            @Override
+            @Override @Nonnull
             public boolean execute (Move move, AIGameState gameState){
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
+                boolean disallowed = false;
+                for (int i = 0; i < tickets.size(); i++) {
+
+                    //first part: check if item is a secret ticket
+                    //second part: check if it's a revaling round (+i to block the double move if move overlaps)
+                    if (tickets.get(i).equals(ScotlandYard.Ticket.SECRET)
+                    && gameState.getSetup().moves.get(gameState.getMrXTravelLog().size() - 1 + i) == true) {
+                        disallowed = true;
+                    }
+                }
+
 //              Check if move at current turn is a reveal move
-                return !tickets.contains(ScotlandYard.Ticket.SECRET) || !gameState
-                        .getSetup()
-                        .moves
-                        .get(gameState.getMrXTravelLog().size() - 1) // get starts at index 0
-                        .equals(true);
+                return !disallowed;
             }
         }
 
         public static class AllPossibleLocationsHaveTaxis implements FilterStrategy{
-            @Override
+            @Override @Nonnull
             public boolean execute (Move move, AIGameState gameState){
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
                 ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph =
