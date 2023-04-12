@@ -1,19 +1,23 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
 
 import java.util.Optional;
 
 // MCTS Algorithm (Monte Carlo tree search)
 public class MCTS extends Thread {
-
-    private Thread parentThread;
+    private ThreadController controller;
     final private Node mctsTree;
     final Heuristics.EGreedyPlayouts eGreedyPlayouts;
 
-    public MCTS (Node mctsTree, Thread parentThread) {
+    /**
+     * @param mctsTree the mcts tree to apply the algorithm to
+     * @param controller the thread used to stop execution of the mcts algorithm within the time limit
+     * */
+    public MCTS (Node mctsTree, ThreadController controller) {
         this.mctsTree = mctsTree;
-        this.parentThread = parentThread;
+        this.controller = controller;
         this.eGreedyPlayouts = new Heuristics.EGreedyPlayouts();
     }
 
@@ -21,21 +25,23 @@ public class MCTS extends Thread {
      * @throws IllegalStateException Can't get winning piece of a game state
      * */
     public void iterationAlgorithm () {
+        Pair<Node, Boolean> nodeBooleanPair;
         Node node = this.mctsTree;
         Piece gameValue;
+//      Stores whether latest child was from selection or expansion.
+        boolean selected = true;
 
         // Selection Stage.
         // Stops selecting when node is not fully expanded or game is already won.
-        while (node.isFullyExpanded() && node.isNotGameOver()) {
-            node = node.selectChild();
+        while (selected && node.isNotGameOver()) {
+            nodeBooleanPair = node.expandOrSelect();
+            node = nodeBooleanPair.left();
+            selected = nodeBooleanPair.right();
         }
 
 //      If game state is not a winning game state.
-        // Else don't run expansion simulation or backpropagation
+        // Else don't run simulation or backpropagation
         if (node.isNotGameOver()) {
-            // Expansion Stage
-            node = node.expandNode();
-
             // Simulation Stage
             gameValue = Node.simulateGame(
                     node.getGameState(),
@@ -44,32 +50,21 @@ public class MCTS extends Thread {
             );
         }
         else {
-            Optional<Piece> optionalPiece = Node.getGameWinner(node.getGameState());
-            if (optionalPiece.isEmpty())
-                throw new IllegalStateException("Cannot get winning piece of game state");
-
-            gameValue = optionalPiece.get();
+            gameValue = Node.getGameWinner(node.getGameState()).orElseThrow();
         }
 
         // Backpropagation Stage
-        Piece value = node.backPropagation(gameValue);
+        node.backPropagation(gameValue);
     }
 
     //Main component to execute the algorithm
     @Override
     public void run () {
-        int numIterations = 0;
-
-        //Cap numIterations at 25000 because there is no noticeable behavioural improvements after this point
+        //Cap numIterations at 30000 because there is no noticeable behavioural improvements after this point
         //Additionally it is also to make AI take their turn faster towards the end of the game
-        while(!Thread.interrupted() && (numIterations < 25000)) {
-            numIterations++;
+        while(!Thread.interrupted() && controller.getIterations() < 30000) {
             this.iterationAlgorithm();
-        }
-        System.out.println("Number of iterations: " + numIterations);
-
-        if (numIterations >= 25000) {
-            this.parentThread.interrupt();
+            controller.incrementIteration();
         }
     }
 

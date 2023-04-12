@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
 
@@ -18,8 +19,11 @@ public class Node {
     final private List<Move> remainingMoves; // Pre-filtered
     private double totalPlays;
     private double totalValue;
+
+//  Used to reduce emphasis on nodes traversed by other threads.
+    private int virtualLoss;
     final private List<Node> children;
-    private Node parent = null;
+    final private Node parent;
     final private Node root;
     final private PossibleLocations possibleLocations;
     final private Heuristics.MoveFiltering moveFilter;
@@ -55,6 +59,7 @@ public class Node {
         this.gameState = gameState;
         this.piece = gameState.getAvailableMoves().asList().get(0).commencedBy();
         this.root = this;
+        this.parent = null;
         this.moveFilter = moveFilter;
         this.possibleLocations = possibleLocations;
         this.coalitionReduction = coalitionReduction;
@@ -119,12 +124,16 @@ public class Node {
         return this.previousMove;
     }
 
-    public double getTotalValue () {
+    private double getTotalValue () {
         return this.totalValue;
     }
 
-    public double getTotalPlays () {
+    private double getTotalPlays () {
         return this.totalPlays;
+    }
+
+    private int getVirtualLoss () {
+        return this.virtualLoss;
     }
 
     /**
@@ -142,7 +151,7 @@ public class Node {
      * @return Child with the most visits.
      * @throws IllegalStateException if node has no children
      * */
-    public Node getBestChild () {
+    public synchronized Node getBestChild () {
         // Post conditions will ensure score > -Infinity and bestChild will exist
         double bestScore = Double.NEGATIVE_INFINITY;
         Node bestChild = null;
@@ -161,7 +170,24 @@ public class Node {
         return bestChild;
     }
 
-    public boolean isFullyExpanded () {
+    /**
+     * Either expands and adds a child, or selects the best child, depending on if the node is fully
+     * expanded.
+     * you can only expand or select one at a time
+     *
+     * @return Pair with child Node on left, and boolean (false if expanded, true if selected).
+     */
+    public synchronized Pair<Node, Boolean> expandOrSelect() {
+//      Adds to virtual loss so that other threads visit different nodes.
+        this.virtualLoss ++;
+        if (this.isFullyExpanded()) {
+            return new Pair<>(this.selectChild(), true);
+        } else {
+            return new Pair<>(this.expandNode(), false);
+        }
+    }
+
+    private boolean isFullyExpanded () {
 //      Checks if no available moves can be added and if there are children added.
         return this.remainingMoves.size() == 0 && this.children.size() > 0;
     }
@@ -172,7 +198,7 @@ public class Node {
      * @return a new Node to add to the data structure (tree)
      * @throws IllegalStateException if this function tries to expand on a fully expanded node
      * */
-    public Node expandNode () {
+    private Node expandNode () {
         if (remainingMoves.isEmpty()) throw new IllegalStateException("Cannot call expandNode on fully expanded node.");
 
         Move nextMove = remainingMoves.get(new Random().nextInt(remainingMoves.size()));
@@ -221,7 +247,9 @@ public class Node {
         if (childNode.getTotalPlays() == 0) {
             avgScore = 0;
         } else {
-            avgScore = childNode.getTotalValue() / childNode.getTotalPlays();
+//          Subtracts virtual loss so that threads are less likely to traverse this path when
+//          already visited by another thread.
+            avgScore = (childNode.getTotalValue() - childNode.virtualLoss) / childNode.getTotalPlays();
         }
 
         double explorationFactor =
@@ -238,7 +266,7 @@ public class Node {
      * Select child based on the best UCB score
      * @throws IllegalStateException node has no children
      * */
-    public Node selectChild () {
+    private Node selectChild () {
         if (this.children.isEmpty())
             throw new IllegalStateException("Cannot select child as no children exist");
 
@@ -328,18 +356,21 @@ public class Node {
      * @return Recurse up tree and returns value at root of tree.
      */
     public Piece backPropagation(Piece value) {
-        this.totalPlays += 1;
+//      Ensures that the count is only updated on node by single thread at a time.
+        synchronized (this) {
+            this.totalPlays += 1;
+            this.virtualLoss --;
 
-//      Root node
-        if (this.parent == null) {
-            this.totalValue += this.coalitionReduction.calculateValue(this.piece, value);
-            return value;
-        } else {
-            this.totalValue += this.coalitionReduction.calculateValue(this.parent.piece, value);
-
-//          Recurse value to top of tree.
-            return this.parent.backPropagation(value);
+            //      Root node
+            if (this.parent == null) {
+                this.totalValue += this.coalitionReduction.calculateValue(this.piece, value);
+                return value;
+            } else {
+                this.totalValue += this.coalitionReduction.calculateValue(this.parent.piece, value);
+            }
         }
 
+//      Recurse value to top of tree.
+        return this.parent.backPropagation(value);
     }
 }

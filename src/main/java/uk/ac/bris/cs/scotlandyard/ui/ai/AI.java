@@ -4,6 +4,8 @@ import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 //Not to be confused with "Ai" which is implemented by MyAi
@@ -23,18 +25,36 @@ public interface AI {
         }
     }
 
+
+    /**
+     * @param mctsTree the MCTS tree in which the agent controls
+     * @param timeoutPair amount of time the thread lasts for
+     * */
     static void runThreads(Node mctsTree, Pair<Long, TimeUnit> timeoutPair){
-        Thread m = Thread.currentThread();
-        MCTS mcts = new MCTS(mctsTree, m);
+        try {
+            ThreadController controller = new ThreadController();
 
-//      Starts thread that runs the Monte Carlo Tree Search.
-        mcts.start();
+            //cores in the cpu
+            final int threadsUsed = Runtime.getRuntime().availableProcessors();
+            //Runs for allocated turn time - 100ms
+            final long milliseconds = timeoutPair.right().toMillis(timeoutPair.left()) - 100;
 
-//      Sleeps program to let MCTS algorithm run
-        AI.sleepThread(timeoutPair);
+            System.out.println("Number of \'available processors\' - 2: " + threadsUsed);
 
-//      Interrupts the algorithm which causes it to stop testing paths.
-        if (mcts.isAlive()) mcts.interrupt();
+            ExecutorService executorService = Executors.newFixedThreadPool(threadsUsed);
+
+            //Submit MCTS tasks per thread
+            for (int i = 0; i < threadsUsed; i++) {
+                executorService.submit(new MCTS(mctsTree, controller));
+            }
+
+
+
+            executorService.awaitTermination(milliseconds, TimeUnit.MILLISECONDS);
+
+            System.out.format("Total number of iterations: %s\n", controller.getIterations());
+//      Not expected to receive an interrupt on current thread so just return early.
+        } catch (InterruptedException e) {}
     }
 
     Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair);
