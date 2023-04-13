@@ -33,7 +33,8 @@ public class DistancesSingleton {
 					);
 			int dimensions = ScotlandYard.standardGraph().nodes().size();
 
-			String[] distanceStrings = file.split("\n");
+//			Splits on any new line character(s)
+			String[] distanceStrings = file.split("\\R");
 
 
 			int[][] distancesArray = new int[dimensions][dimensions];
