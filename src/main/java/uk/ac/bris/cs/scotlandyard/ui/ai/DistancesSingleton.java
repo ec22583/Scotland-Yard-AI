@@ -59,6 +59,10 @@ public class DistancesSingleton {
 			System.err.println("Cannot read from distances.txt");
 			System.exit(1);
 			return null;
+		} catch (NumberFormatException e) {
+			System.err.println("Error reading number from distances.txt");
+			System.exit(1);
+			return null;
 		}
 	}
 
