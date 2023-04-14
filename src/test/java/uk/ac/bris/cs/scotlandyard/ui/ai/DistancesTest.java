@@ -26,12 +26,10 @@ public class DistancesTest extends AITestBase {
     @Test public void testReflexiveRelalationship(){
         DistancesSingleton distancesSingleton = getDistancesSingleton();
 
-        assertThat(distancesSingleton.get(35,35))
-                .isEqualTo(0);
-        assertThat(distancesSingleton.get(123,123))
-                .isEqualTo(0);
-        assertThat(distancesSingleton.get(163,163))
-                .isEqualTo(0);
+        for (int i = 1; i < 200; i++){
+            assertThat((distancesSingleton.get(i,i)))
+                    .isEqualTo(0);
+        }
     }
 
     @Test public void testSymmetricRelation(){
