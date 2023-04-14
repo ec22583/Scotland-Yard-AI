@@ -15,6 +15,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <runSuite>**/AllTest.class</runSuite>
         <skipAfter>0</skipAfter>
         <werror>true</werror>
         <javafx.version>17.0.2</javafx.version>
@@ -178,6 +179,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
+                    <includes>
+                        <include>${runSuite}</include>
+                    </includes>
                     <trimStackTrace>false</trimStackTrace>
                     <skipAfterFailureCount>${skipAfter}</skipAfterFailureCount>
                 </configuration>
