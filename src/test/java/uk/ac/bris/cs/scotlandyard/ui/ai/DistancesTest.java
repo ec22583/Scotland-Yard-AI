@@ -2,6 +2,9 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.graph.EndpointPair;
+import com.google.common.graph.ImmutableValueGraph;
 import org.junit.Test;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
@@ -32,18 +35,25 @@ public class DistancesTest extends AITestBase {
         }
     }
 
+    //Idea: for every node in the graph find its neighbours and test their distances to be equal to 1
+    //Since this isn't a directed graph this should be true for both sides making it a symmetric relation
     @Test public void testSymmetricRelation(){
         DistancesSingleton distancesSingleton = getDistancesSingleton();
 
-        assertThat(distancesSingleton.get(35,36))
-                .isEqualTo(1);
-        assertThat(distancesSingleton.get(36,35))
-                .isEqualTo(1);
+        ImmutableValueGraph<Integer, ImmutableSet<Transport>> graph = standardGraph();
 
-        assertThat(distancesSingleton.get(44,58))
-                .isEqualTo(1);
-        assertThat(distancesSingleton.get(58,44))
-                .isEqualTo(1);
+        for (int source = 1; source < 200; source++){
+            Set<EndpointPair<Integer>> edges = graph.incidentEdges(source);
+
+            for (EndpointPair<Integer> edge : edges){
+                int neighbour = edge.nodeU();
+//                System.out.println(source + ";" + neighbour);
+                assertThat(distancesSingleton.get(source, neighbour)).isEqualTo(1);
+                assertThat(distancesSingleton.get(neighbour, source)).isEqualTo(1);
+            }
+
+        }
+
     }
 
     @Test public void testTransitiveRelation(){

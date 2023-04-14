@@ -4,6 +4,7 @@ import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
@@ -127,17 +128,19 @@ public class Node {
         return this.previousMove;
     }
 
-    private double getTotalValue () {
+    public double getTotalValue () {
         return this.totalValue;
     }
 
-    private double getTotalPlays () {
+    public double getTotalPlays () {
         return this.totalPlays;
     }
 
-    private int getVirtualLoss () {
+    public int getVirtualLoss () {
         return this.virtualLoss;
     }
+
+    public Node getParent (){ return this.parent; }
 
     /**
      * Getter method
@@ -154,6 +157,7 @@ public class Node {
      * @return Child with the most visits.
      * @throws IllegalStateException if node has no children
      * */
+    @Nonnull
     public synchronized Node getBestChild () {
         // Post conditions will ensure score > -Infinity and bestChild will exist
         double bestScore = Double.NEGATIVE_INFINITY;
@@ -185,12 +189,13 @@ public class Node {
         this.virtualLoss ++;
         if (this.isFullyExpanded()) {
             return new Pair<>(this.selectChild(), true);
-        } else {
+        }
+        else {
             return new Pair<>(this.expandNode(), false);
         }
     }
 
-    private boolean isFullyExpanded () {
+    public boolean isFullyExpanded () {
 //      Checks if no available moves can be added and if there are children added.
         return this.remainingMoves.size() == 0 && this.children.size() > 0;
     }

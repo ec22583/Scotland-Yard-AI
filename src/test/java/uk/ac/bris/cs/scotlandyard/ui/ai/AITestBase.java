@@ -62,4 +62,5 @@ public class AITestBase {
     @Nonnull static GameSetup standard24MoveSetup() {
         return new GameSetup(defaultGraph, STANDARD24MOVES);
     }
+
 }

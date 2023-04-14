@@ -16,6 +16,7 @@ Adapted for use in the open task.
         BoardHelpersTest.class,
         PossibleLocationsTest.class,
         HeuristicsTest.class,
-        DistancesTest.class
+        DistancesTest.class,
+        NodeTest.class
 })
 public class AllTest {}
