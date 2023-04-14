@@ -33,7 +33,10 @@ public interface AI {
                 executorService.submit(mcts);
             }
 
+//          Shuts down the service but allows already queued tasks to run.
             executorService.shutdown();
+
+//          Waits either for the service to shut down or for the time limit.
             executorService.awaitTermination(milliseconds, TimeUnit.MILLISECONDS);
             executorService.shutdownNow();
             

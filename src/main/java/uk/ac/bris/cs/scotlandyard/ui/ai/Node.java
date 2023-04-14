@@ -11,6 +11,8 @@ import java.util.*;
  * Stores the current game state, as well as the recorded plays and wins on a state.
  * Wins are from perspective of parent, unless node is root node, where wins are from
  * perspective of itself.
+ * Use of Node class to store all MCTS logic partially inspired from:
+ * https://www.youtube.com/watch?v=wuSQpLinRB4
  */
 public class Node {
     final private AIGameState gameState;

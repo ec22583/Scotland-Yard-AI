@@ -5,7 +5,12 @@ import uk.ac.bris.cs.scotlandyard.model.Piece;
 
 import java.util.Optional;
 
-// MCTS Algorithm (Monte Carlo tree search)
+/**
+ * MCTS (Monte Carlo Tree Search) Algorithm
+ *
+ * Formatting of the steps of the algorithm slightly based on:
+ * https://www.youtube.com/watch?v=wuSQpLinRB4
+ */
 public class MCTS extends Thread {
     final private ThreadController controller;
     final private Node mctsTree;
