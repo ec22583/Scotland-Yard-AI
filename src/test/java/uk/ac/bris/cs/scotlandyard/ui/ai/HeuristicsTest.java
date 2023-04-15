@@ -209,12 +209,6 @@ public class HeuristicsTest extends AITestBase {
 
         Move secretMove = new Move.SingleMove(MRX, 35, Ticket.SECRET, 36);
         Move taxiMove = new Move.SingleMove(MRX, 35, Ticket.TAXI, 36);
-        gameState = gameState.advance(secretMove);
-        possibleLocations = possibleLocations.updateLocations(gameState);
-
-        //Verify it is turn 3
-        assertThat(possibleLocations.getTurn())
-                .isEqualTo(3);
 
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
@@ -224,7 +218,7 @@ public class HeuristicsTest extends AITestBase {
         assertThat(detectiveGameState
                 .getSetup()
                 .moves
-                .get(gameState.getMrXTravelLog().size() - 1)
+                .get(gameState.getMrXTravelLog().size())
                 .equals(true))
                 .isEqualTo(true);
 

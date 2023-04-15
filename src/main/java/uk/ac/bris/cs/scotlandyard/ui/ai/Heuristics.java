@@ -60,7 +60,7 @@ public interface Heuristics {
                     //first part: check if item is a secret ticket
                     //second part: check if it's a revaling round (+i to block the double move if move overlaps)
                     if (tickets.get(i).equals(ScotlandYard.Ticket.SECRET)
-                    && gameState.getSetup().moves.get(gameState.getMrXTravelLog().size() - 1 + i) == true) {
+                    && gameState.getSetup().moves.get(gameState.getMrXTravelLog().size() + i) == true) {
                         disallowed = true;
                     }
                 }
