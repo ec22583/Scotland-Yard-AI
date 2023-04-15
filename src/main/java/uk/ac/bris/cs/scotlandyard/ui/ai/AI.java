@@ -20,8 +20,8 @@ public interface AI {
 
             //cores in the cpu
             final int threadsUsed = Runtime.getRuntime().availableProcessors();
-            //Runs for allocated turn time - 100ms
-            final long milliseconds = timeoutPair.right().toMillis(timeoutPair.left()) - 100;
+            //Runs for allocated turn time - 200ms
+            final long milliseconds = timeoutPair.right().toMillis(timeoutPair.left()) - 200;
 
             System.out.println("Number of \'available processors\': " + threadsUsed);
 
