@@ -21,7 +21,6 @@ public class MyAi implements Ai {
 		this.distances = DistancesSingleton.getInstance();
 		this.mrXAI = new MrXAI();
 		this.detectiveAI = new DetectiveAI(this.distances);
-
 	}
 
 	@Nonnull @Override
@@ -30,9 +29,7 @@ public class MyAi implements Ai {
 	}
 
 	@Nonnull @Override
-	public Move pickMove(
-			@Nonnull Board board,
-			Pair<Long, TimeUnit> timeoutPair) {
+	public Move pickMove(@Nonnull Board board, Pair<Long, TimeUnit> timeoutPair) {
 
 		List<Move> availableMoves = board.getAvailableMoves().asList();
 

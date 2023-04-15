@@ -606,7 +606,8 @@ public class AIGameStateFactory {
 						.filter(d -> !d.piece().equals(finalNewPlayer.piece()))
 						.toList()
 				);
-			} else {
+			}
+			else {
 				newDetectives.addAll(this.detectives);
 			}
 
@@ -717,27 +718,25 @@ public class AIGameStateFactory {
         }
 
         for (int possibleLocation : possibleLocations.getLocations()){
+
+			//Construct a new MrX per each possible location
             Player mrX = new Player(
                     Piece.MrX.MRX,
                     BoardHelpers.getTicketsForPlayer(board, Piece.MrX.MRX),
                     possibleLocation
             );
 
-            gameStates.add(
-					new Pair<>(
-							new MyGameState(
-								board.getSetup(),
-								ImmutableSet.copyOf(remaining),
-								board.getMrXTravelLog(),
-								mrX,
-								detectives,
-								null
-							),
-							possibleLocation
-					)
+			AIGameState aiGameState = new MyGameState(
+					board.getSetup(),
+					ImmutableSet.copyOf(remaining),
+					board.getMrXTravelLog(),
+					mrX,
+					detectives,
+					null
 			);
-        }
 
+            gameStates.add(new Pair<>(aiGameState, possibleLocation));
+        }
         return gameStates;
     }
 

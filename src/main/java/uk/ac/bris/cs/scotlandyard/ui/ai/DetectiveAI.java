@@ -30,25 +30,16 @@ public class DetectiveAI implements AI{
         System.out.printf("Current locations: %s%n", this.possibleLocations.getLocations());
 
         List<Pair<AIGameState, Integer>> gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
-//      Remove any already winning game states since they are not possible.
-        gameStates = gameStates.stream().filter(s -> s.left().getWinner().isEmpty()).toList();
 
-//        Pair<AIGameState, Integer> possibleGameState = null;
-//        int maximinDistance = Integer.MIN_VALUE;
-//        for (Pair<AIGameState, Integer> gameStatePair : gameStates) {
-//            List<Integer> detectiveLocations = gameStatePair.left().getDetectiveLocations();
-//            int currentMinimumDistance = detectiveLocations
-//                    .stream()
-//                    .map(l -> distances.get(l, gameStatePair.right()))
-//                    .mapToInt(Integer::intValue)
-//                    .min()
-//                    .orElseThrow();
-//
-//             if (currentMinimumDistance > maximinDistance) {
-//                 maximinDistance = currentMinimumDistance;
-//                 possibleGameState = gameStatePair;
-//             }
-//        }
+//      Remove any already winning game states since they are not possible.
+        gameStates = gameStates
+                .stream()
+                .filter(s ->
+                        s.left()
+                        .getWinner()
+                        .isEmpty()
+                )
+                .toList();
 
         AIGameState randomGameState = gameStates.get(
                 new Random().nextInt(gameStates.size())

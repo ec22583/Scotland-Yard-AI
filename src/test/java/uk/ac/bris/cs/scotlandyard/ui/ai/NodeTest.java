@@ -1,10 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.graph.EndpointPair;
-import com.google.common.graph.ImmutableValueGraph;
 import org.junit.Test;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
@@ -15,42 +11,10 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.MrX.MRX;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.Detective.BLUE;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.Detective.GREEN;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.Detective.RED;
-import static uk.ac.bris.cs.scotlandyard.model.Piece.Detective.WHITE;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.Detective.YELLOW;
 import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.*;
 
 public class NodeTest extends AITestBase{
-
-    /**
-     * Used for standardized testing.
-     * AI Game state is a detective game state.
-     * The game state used is turn 1 with MrX + one detective. (Mr X to move)
-     * */
-    static public Node constructStandardRootNode(){
-        PossibleLocations possibleLocations = getPossibleLocationsFactory().buildInitialLocations();
-        Board.GameState gameState = MyGameStateFactory.a(
-                standard24MoveSetup(),
-                new Player(MRX, defaultMrXTickets(), 35),
-                ImmutableList.of(new Player(RED, defaultDetectiveTickets(), 50))
-        );
-
-        //Get first AI detective's game state.
-        //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
-        AIGameState detectiveGameState = aiGameStateFactory()
-                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
-
-
-        //Create a Root node
-        Node newNode =
-                new Node(
-                        detectiveGameState,
-                        possibleLocations,
-                        new Heuristics.MoveFiltering(),
-                        new Heuristics.CoalitionReduction(),
-                        new Heuristics.ExplorationCoefficient()
-                );
-        return newNode;
-    }
 
     @Test
     public void verifyRootConstructorWorks(){
@@ -126,4 +90,45 @@ public class NodeTest extends AITestBase{
 
         assertThat(node.isFullyExpanded() == false).isEqualTo(true);
     }
+
+    //Verify given the winning piece, the return value of that piece does not mutate. (Test for root node)
+    @Test
+    public void verifyBackPropagationDoesNotMutateRootNode(){
+        Node rootNode = constructStandardRootNode();
+
+        //Test for ALL PIECES
+        Piece pieceToTest1 = rootNode.backPropagation(MRX);
+        Piece pieceToTest2 = rootNode.backPropagation(BLUE);
+        Piece pieceToTest3 = rootNode.backPropagation(GREEN);
+        Piece pieceToTest4 = rootNode.backPropagation(RED);
+        Piece pieceToTest5 = rootNode.backPropagation(YELLOW);
+
+        assertThat(pieceToTest1).isEqualTo(MRX);
+        assertThat(pieceToTest2).isEqualTo(BLUE);
+        assertThat(pieceToTest3).isEqualTo(GREEN);
+        assertThat(pieceToTest4).isEqualTo(RED);
+        assertThat(pieceToTest5).isEqualTo(YELLOW);
+
+    }
+
+    //Same as verifyBackPropagationDoesNotMutateRootNode, but test for a child node.
+    @Test
+    public void verifyBackPropagationDoesNotMutateChildNode(){
+        Node childNode = constructStandardChildNode();
+
+        //Test for ALL PIECES
+        Piece pieceToTest1 = childNode.backPropagation(MRX);
+        Piece pieceToTest2 = childNode.backPropagation(BLUE);
+        Piece pieceToTest3 = childNode.backPropagation(GREEN);
+        Piece pieceToTest4 = childNode.backPropagation(RED);
+        Piece pieceToTest5 = childNode.backPropagation(YELLOW);
+
+        assertThat(pieceToTest1).isEqualTo(MRX);
+        assertThat(pieceToTest2).isEqualTo(BLUE);
+        assertThat(pieceToTest3).isEqualTo(GREEN);
+        assertThat(pieceToTest4).isEqualTo(RED);
+        assertThat(pieceToTest5).isEqualTo(YELLOW);
+    }
+
+
 }
