@@ -29,6 +29,7 @@ public interface Heuristics {
         public final int REMOVE_FROM_REVEALING_ROUND = 1;
         public final int ALL_POSSIBLE_LOCATIONS_HAVE_TAXIS = 2;
 
+        //Application of the strategy pattern
         public interface FilterStrategy {
             /**
              * Used to filter out moves. True keeps a move and false removes a move.
@@ -44,8 +45,15 @@ public interface Heuristics {
             public boolean execute (Move move, AIGameState gameState){
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
-                return !tickets.contains(ScotlandYard.Ticket.SECRET) ||
-                        gameState.getMrXTravelLog().size() > 2;
+                boolean disallowed = false;
+                for (int i = 0; i < tickets.size(); i++){
+                    if (tickets.get(i).equals(ScotlandYard.Ticket.SECRET) &&
+                    gameState.getMrXTravelLog().size() + (i + 1) < 3){
+                        disallowed = true;
+                    }
+                }
+
+                return  !disallowed;
             }
         }
 
@@ -119,34 +127,6 @@ public interface Heuristics {
             // If the move commenced is done by a detective.
             return true;
         }
-    }
-
-
-    /**
-     * Categorize locations based on distance (max, avg) from detective and types of connections
-     * a location has
-     * */
-    class LocalizationCategorization {
-        //TODO: I have designed a framework for Localization Categorization. We need to implement the return types
-        //and the actual implementation.
-
-        private void categorizeMinimumDistance(){
-
-        }
-
-        private void categorizeAverageDistance(){
-
-        }
-
-        private void categorizeStationType(){
-
-        }
-
-        //Main method to apply all categorization techniques
-        public void applyCategories(){
-
-        }
-
     }
 
     /**

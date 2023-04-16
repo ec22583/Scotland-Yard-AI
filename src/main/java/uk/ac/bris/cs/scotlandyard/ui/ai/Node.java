@@ -298,7 +298,7 @@ public class Node {
 
 
     /**
-     * Extract a winner from a given gameState
+     * Extract a winner from a given gameState. Will return Empty is there doesn't exist a winner
      *
      * @throws IllegalArgumentException if given gameState is an initial game state
      * */

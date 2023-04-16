@@ -19,10 +19,6 @@ import static uk.ac.bris.cs.scotlandyard.model.Piece.Detective.WHITE;
 import static uk.ac.bris.cs.scotlandyard.model.Piece.Detective.YELLOW;
 import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.*;
 public class HeuristicsTest extends AITestBase {
-    //Need to make an AI game state
-
-    //GameSetup gameSetup = gameState.getSetup();
-
 
     /** test Move Filtering - RemoveFromFirstTwoRounds round 1
      * Filter out any secret tickets at round 1
@@ -38,12 +34,10 @@ public class HeuristicsTest extends AITestBase {
 
         Move secretMove = new Move.SingleMove(MRX, 35, Ticket.SECRET, 36);
         Move taxiMove = new Move.SingleMove(MRX, 35, Ticket.TAXI, 36);
-        gameState = gameState.advance(secretMove);
-        possibleLocations = possibleLocations.updateLocations(gameState);
 
-        //Verify it is turn 1
+        //Verify it is turn 0 (no one has moved yet
         assertThat(possibleLocations.getTurn())
-                .isEqualTo(1);
+                .isEqualTo(0);
 
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
@@ -89,12 +83,6 @@ public class HeuristicsTest extends AITestBase {
 
         Move secretMove = new Move.SingleMove(MRX, 36, Ticket.SECRET, 35);
         Move taxiMove = new Move.SingleMove(MRX, 36, Ticket.TAXI, 35);
-        gameState = gameState.advance(secretMove);
-        possibleLocations = possibleLocations.updateLocations(gameState);
-
-        //Verify it is turn 2
-        assertThat(possibleLocations.getTurn())
-                .isEqualTo(2);
 
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
@@ -148,13 +136,6 @@ public class HeuristicsTest extends AITestBase {
 
         Move secretMove = new Move.SingleMove(MRX, 35, Ticket.SECRET, 36);
         Move taxiMove = new Move.SingleMove(MRX, 35, Ticket.TAXI, 36);
-        gameState = gameState.advance(secretMove);
-        possibleLocations = possibleLocations.updateLocations(gameState);
-
-        //Verify it is turn 3
-        assertThat(possibleLocations.getTurn())
-                .isEqualTo(3);
-
 
         //Get first AI detective's game state.
         //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
@@ -175,8 +156,60 @@ public class HeuristicsTest extends AITestBase {
         assertThat(testFilter.execute(taxiMove, detectiveGameState))
                 .isEqualTo(true);
 
+    }
 
+    /** test Move Filtering - RemoveFromFirstTwoRounds round 3
+     * Round 1 -> 3: Don't remove the secret ticket whose second part is a secret move as that was taken at turn 3.
+     * */
+    @Test public void testMoveFilteringDontRemoveRoundThreeDoubleMove(){
+        PossibleLocations possibleLocations =
+                getPossibleLocationsFactory().buildInitialLocations();
+        Board.GameState gameState = MyGameStateFactory.a(
+                standard24MoveSetup(),
+                new Player(MRX, defaultMrXTickets(), 35),
+                ImmutableList.of(new Player(RED, defaultDetectiveTickets(), 50))
+        );
 
+        gameState = gameState.advance(new Move.SingleMove(MRX, 35, Ticket.TAXI, 36));
+        possibleLocations = possibleLocations.updateLocations(gameState);
+        gameState = gameState.advance(new Move.SingleMove(RED, 50, Ticket.TAXI, 49));
+
+        //Verify it is turn 1
+        assertThat(possibleLocations.getTurn())
+                .isEqualTo(1);
+
+        //Create a double Move
+        Move secretDoubleMoveCase1 = new Move.DoubleMove
+                (MRX, 36, Ticket.TAXI, 35, Ticket.SECRET, 36);
+        Move secretDoubleMoveCase2 = new Move.DoubleMove
+                (MRX, 36, Ticket.SECRET, 35, Ticket.TAXI, 36);
+        Move taxiDoubleMove = new Move.DoubleMove
+                (MRX, 36, Ticket.TAXI, 35, Ticket.TAXI, 36);
+
+        //Get first AI detective's game state.
+        //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
+        AIGameState detectiveGameState = aiGameStateFactory()
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
+
+        //Create relevant filter to test
+        Heuristics.MoveFiltering heuristic =
+                new Heuristics.MoveFiltering();
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.REMOVE_FROM_FIRST_TWO_ROUNDS);
+
+        //Double ticket has a secret move in the second part. It should pass the filter as the secret move
+        // was taken in round 3
+        assertThat(testFilter.execute(secretDoubleMoveCase1, detectiveGameState))
+                .isEqualTo(true);
+
+        //Double ticket has a secret move in the first part. It should fail the filter as the secret move
+        // was taken in round 2
+        assertThat(testFilter.execute(secretDoubleMoveCase2, detectiveGameState))
+                .isEqualTo(false);
+
+        //if it isn't a secret move then it should pass the filter
+        assertThat(testFilter.execute(taxiDoubleMove, detectiveGameState))
+                .isEqualTo(true);
     }
 
     /** test Move Filtering - RemoveFromRevealingRound round 3
@@ -236,6 +269,122 @@ public class HeuristicsTest extends AITestBase {
         assertThat(testFilter.execute(taxiMove, detectiveGameState))
                 .isEqualTo(true);
 
+    }
+
+    /**
+     * Test out move filtering - RemoveFromRevealingRound round 1 -> 3
+     * Here Mr X will play a double move with the second part being a secret move. The filter should filter this out.
+     * */
+    @Test public void testRevealingRoundFilterWorksDoubleMoveCase1(){
+        PossibleLocations possibleLocations =
+                getPossibleLocationsFactory().buildInitialLocations();
+        Board.GameState gameState = MyGameStateFactory.a(
+                standard24MoveSetup(),
+                new Player(MRX, defaultMrXTickets(), 35),
+                ImmutableList.of(new Player(RED, defaultDetectiveTickets(), 50))
+        );
+
+        gameState = gameState.advance(new Move.SingleMove(MRX, 35, Ticket.TAXI, 36));
+        possibleLocations = possibleLocations.updateLocations(gameState);
+        gameState = gameState.advance(new Move.SingleMove(RED, 50, Ticket.TAXI, 49));
+
+        //Verify it is turn 1
+        assertThat(possibleLocations.getTurn())
+                .isEqualTo(1);
+
+        Move secretDoubleMove = new Move.DoubleMove
+                (MRX, 36, Ticket.TAXI, 35, Ticket.SECRET, 36);
+        Move taxiDoubleMove = new Move.DoubleMove
+                (MRX, 36, Ticket.TAXI, 35, Ticket.TAXI, 36);
+
+        //Get first AI detective's game state.
+        //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
+        AIGameState detectiveGameState = aiGameStateFactory()
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
+
+        //Turn 2 is not a revealing round so this shouldn't be true
+        assertThat(detectiveGameState
+                .getSetup()
+                .moves
+                .get(gameState.getMrXTravelLog().size())
+                .equals(true))
+                .isEqualTo(false);
+
+        //Create relevant filter to test (Filter secret move at a reavealing round)
+        Heuristics.MoveFiltering heuristic =
+                new Heuristics.MoveFiltering();
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.REMOVE_FROM_REVEALING_ROUND);
+
+        //Since the second part of the move is a secret ticket it should fail the filter
+        assertThat(testFilter.execute(secretDoubleMove, detectiveGameState))
+                .isEqualTo(false);
+
+        //if it isn't a secret move then it should pass the filter
+        assertThat(testFilter.execute(taxiDoubleMove, detectiveGameState))
+                .isEqualTo(true);
+    }
+
+    /**
+     * Test out move filtering - RemoveFromRevealingRound round 2 -> 4
+     * Here Mr X will play a double move with the first part being a secret move. The filter should filter this out.
+     * */
+    @Test public void testRevealingRoundFilterWorksDoubleMoveCase2(){
+        PossibleLocations possibleLocations =
+                getPossibleLocationsFactory().buildInitialLocations();
+        Board.GameState gameState = MyGameStateFactory.a(
+                standard24MoveSetup(),
+                new Player(MRX, defaultMrXTickets(), 35),
+                ImmutableList.of(new Player(RED, defaultDetectiveTickets(), 50))
+        );
+
+        gameState = gameState.advance(new Move.SingleMove(MRX, 35, Ticket.TAXI, 36));
+        possibleLocations = possibleLocations.updateLocations(gameState);
+        gameState = gameState.advance(new Move.SingleMove(RED, 50, Ticket.TAXI, 49));
+
+        //Verify it is turn 1
+        assertThat(possibleLocations.getTurn())
+                .isEqualTo(1);
+
+        gameState = gameState.advance(new Move.SingleMove(MRX, 36, Ticket.TAXI, 35));
+        possibleLocations = possibleLocations.updateLocations(gameState);
+        gameState = gameState.advance(new Move.SingleMove(RED, 49, Ticket.TAXI, 50));
+
+        //Verify it is turn 2
+        assertThat(possibleLocations.getTurn())
+                .isEqualTo(2);
+
+        Move secretDoubleMove = new Move.DoubleMove
+                (MRX, 35, Ticket.SECRET, 36, Ticket.TAXI, 35);
+        Move taxiDoubleMove = new Move.DoubleMove
+                (MRX, 35, Ticket.TAXI, 36, Ticket.TAXI, 35);
+
+        //Get first AI detective's game state.
+        //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
+        AIGameState detectiveGameState = aiGameStateFactory()
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
+
+        //Turn 3 is a revealing round so this should be true
+        assertThat(detectiveGameState
+                .getSetup()
+                .moves
+                .get(gameState.getMrXTravelLog().size())
+                .equals(true))
+                .isEqualTo(true);
+
+        //Create relevant filter to test (Filter secret move at a revealing round)
+        Heuristics.MoveFiltering heuristic =
+                new Heuristics.MoveFiltering();
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.REMOVE_FROM_REVEALING_ROUND);
+
+        //Since the first part of the double move is a secret ticket it should fail the filter
+        assertThat(testFilter.execute(secretDoubleMove, detectiveGameState))
+                .isEqualTo(false);
+
+        //if it isn't a secret move then it should pass the filter
+        assertThat(testFilter.execute(taxiDoubleMove, detectiveGameState))
+                .isEqualTo(true);
     }
 
     /** test Move Filtering - RemoveFromRevealingRound round 1
