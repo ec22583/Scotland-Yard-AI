@@ -482,7 +482,7 @@ public class HeuristicsTest extends AITestBase {
                 ImmutableList.of(new Player(RED, defaultDetectiveTickets(), 50))
         );
 
-        //Location 36 adjacent locations (35,37,49) can all be accessed via taxi
+        //194 -> 157 is a ferry move (therefore not all possible locations have taxi routes)
         Move secretMove = new Move.SingleMove(MRX, 194, Ticket.SECRET, 157);
         Move taxiMove = new Move.SingleMove(MRX, 194, Ticket.TAXI, 157);
         gameState = gameState.advance(secretMove);
@@ -530,6 +530,101 @@ public class HeuristicsTest extends AITestBase {
 
         //if it isn't a secret move then it should pass the filter
         assertThat(testFilter.execute(taxiMove, detectiveGameState))
+                .isEqualTo(true);
+    }
+
+
+    /**
+     * Test that the testAllPossibleLocationsHaveTaxis filter will correctly filter a double move
+     * based on its components. In this case, we test the case where the first part of the double move is a
+     * secret ticket.
+     * */
+    @Test public void testAllPossibleLocationsHaveTaxisDoubleMoveCase1(){
+        PossibleLocations possibleLocations =
+                getPossibleLocationsFactory().buildInitialLocations();
+        Board.GameState gameState = MyGameStateFactory.a(
+                standard24MoveSetup(),
+                new Player(MRX, defaultMrXTickets(), 197),
+                ImmutableList.of(new Player(RED, defaultDetectiveTickets(), 50))
+        );
+
+        //194 -> 157 is a ferry move (therefore not all possible locations have taxi routes)
+        //Here we shall play 197 -> 195 -> 194
+        Move secretDoubleMove = new Move.DoubleMove(MRX, 197, Ticket.SECRET, 195, Ticket.TAXI, 194);
+        Move taxiDoubleMove = new Move.DoubleMove(MRX, 197, Ticket.TAXI, 195, Ticket.TAXI, 194);
+        gameState = gameState.advance(secretDoubleMove);
+        possibleLocations = possibleLocations.updateLocations(gameState);
+
+        //Verify it is turn 2 (Because we made a double move)
+        assertThat(possibleLocations.getTurn())
+                .isEqualTo(2);
+
+
+        //Get first AI detective's game state.
+        //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
+        AIGameState detectiveGameState = aiGameStateFactory()
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
+
+        //Create relevant filter to test
+        Heuristics.MoveFiltering heuristic =
+                new Heuristics.MoveFiltering();
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.ALL_POSSIBLE_LOCATIONS_HAVE_TAXIS);
+
+        //since the first part is a secret move and it is from 197 -> 195 it should fail the filter because
+        // All possible locations have taxis
+        assertThat(testFilter.execute(secretDoubleMove, detectiveGameState))
+                .isEqualTo(false);
+
+        //if it isn't a secret move then it should pass the filter
+        assertThat(testFilter.execute(taxiDoubleMove, detectiveGameState))
+                .isEqualTo(true);
+    }
+
+    /**
+     * Test that the testAllPossibleLocationsHaveTaxis filter will correctly filter a double move
+     * based on its components. In this case, we test the case where the second part of the double move is a
+     * secret ticket.
+     * */
+    @Test public void testAllPossibleLocationsHaveTaxisDoubleMoveCase2(){
+        PossibleLocations possibleLocations =
+                getPossibleLocationsFactory().buildInitialLocations();
+        Board.GameState gameState = MyGameStateFactory.a(
+                standard24MoveSetup(),
+                new Player(MRX, defaultMrXTickets(), 194),
+                ImmutableList.of(new Player(RED, defaultDetectiveTickets(), 50))
+        );
+
+        //194 -> 157 is a ferry move (therefore not all possible locations have taxi routes)
+        //Here we shall play 194 -> 195 -> 197
+        Move secretDoubleMove = new Move.DoubleMove(MRX, 194, Ticket.TAXI, 195, Ticket.SECRET, 197);
+        Move taxiDoubleMove = new Move.DoubleMove(MRX, 194, Ticket.TAXI, 195, Ticket.TAXI, 197);
+        gameState = gameState.advance(secretDoubleMove);
+        possibleLocations = possibleLocations.updateLocations(gameState);
+
+        //Verify it is turn 2 (Because we made a double move)
+        assertThat(possibleLocations.getTurn())
+                .isEqualTo(2);
+
+
+        //Get first AI detective's game state.
+        //it doesn't matter which detective is being fed into the heuristic, results should stay consistent
+        AIGameState detectiveGameState = aiGameStateFactory()
+                .buildDetectiveGameStates(gameState, possibleLocations).get(0).left();
+
+        //Create relevant filter to test
+        Heuristics.MoveFiltering heuristic =
+                new Heuristics.MoveFiltering();
+        Heuristics.MoveFiltering.FilterStrategy testFilter = (heuristic.getFilterStrategies())
+                .get(heuristic.ALL_POSSIBLE_LOCATIONS_HAVE_TAXIS);
+
+        //since the second part is a secret move and it is from 195 -> 197 it should fail the filter because
+        // All possible locations have taxis
+        assertThat(testFilter.execute(secretDoubleMove, detectiveGameState))
+                .isEqualTo(false);
+
+        //if it isn't a secret move then it should pass the filter
+        assertThat(testFilter.execute(taxiDoubleMove, detectiveGameState))
                 .isEqualTo(true);
     }
 }

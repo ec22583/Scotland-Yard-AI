@@ -113,22 +113,6 @@ public interface Heuristics {
                 }
 
                 return !disallowed;
-
-//                Set<EndpointPair<Integer>> edges =
-//                        gameState.getSetup().graph.incidentEdges(move.source());
-//
-//                // if it isn't (both a secret ticket and all the edges use taxi tickets)
-//                return !(tickets.contains(ScotlandYard.Ticket.SECRET) &&
-//                        (edges
-//                        .stream()
-//                        .parallel()
-//                        .allMatch(e -> graph
-//                                .edgeValue(e)
-//                                .orElseThrow()
-//                                .contains(ScotlandYard.Transport.TAXI)
-//                        )));
-//            }
-
             }
         }
 
