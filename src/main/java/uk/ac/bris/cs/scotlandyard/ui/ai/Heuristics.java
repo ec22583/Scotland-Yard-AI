@@ -109,10 +109,10 @@ public interface Heuristics {
                                     .contains(ScotlandYard.Transport.TAXI)
                             );
 
-                    disallowed = !(isSecret && allPossibleLocationsHaveTaxis);
+                    if (isSecret && allPossibleLocationsHaveTaxis) disallowed = true;
                 }
 
-                return disallowed;
+                return !disallowed;
 
 //                Set<EndpointPair<Integer>> edges =
 //                        gameState.getSetup().graph.incidentEdges(move.source());
@@ -158,7 +158,7 @@ public interface Heuristics {
                 // If the move commenced is done by a detective.
                 return true;
             }
-        }
+    }
 
         /**
          * Epsilon greedy playout.
