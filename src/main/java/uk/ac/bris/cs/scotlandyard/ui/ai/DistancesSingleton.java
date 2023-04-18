@@ -36,20 +36,20 @@ public class DistancesSingleton {
 //			Splits on any new line character(s)
 			String[] distanceStrings = file.split("\\R");
 
-
+			// Create a 199 x 199 2D array as the distance table
 			int[][] distancesArray = new int[dimensions][dimensions];
 			for (int i = 0; i < distanceStrings.length; i++) {
 				String distanceString = distanceStrings[i];
-
-				List<Integer> distance = Arrays.stream(distanceString.split(","))
-						.map(Integer::valueOf).toList();
+				List<Integer> distance = Arrays
+						.stream(distanceString.split(","))
+						.map(Integer::valueOf)
+						.toList();
 				if (distance.size() != 3) throw new IllegalStateException(
 						"distances.txt not in correct format: Must be comma separated list of 3 items\n" +
 								"0. Starting location.\n" +
 								"1. End location.\n" +
 								"2. Distance"
 				);
-
 
 				distancesArray[distance.get(0) - 1][distance.get(1) - 1] = distance.get(2);
 

@@ -627,4 +627,29 @@ public class HeuristicsTest extends AITestBase {
         assertThat(testFilter.execute(taxiDoubleMove, detectiveGameState))
                 .isEqualTo(true);
     }
+
+    /**
+     * Coalition Reduction is used in back propagation stage of the MCTS algorithm.
+     * Test if the right back propogation score is returned
+     * */
+    @Test public void testCoalitionReduction(){
+        Piece MrX = MRX;
+        Piece Red = RED;
+        Piece Blue = BLUE;
+
+        Heuristics.CoalitionReduction coalitionReduction = new Heuristics.CoalitionReduction();
+
+        //Piece on the root and the winning piece are the same side and player. Backpropogate 1 as normal
+        assertThat(coalitionReduction.calculateValue(MrX,MrX))
+                .isEqualTo(1);
+        assertThat(coalitionReduction.calculateValue(Red,Red))
+                .isEqualTo(1);
+
+        //If different detective pieces in winner and root node, then apply the coalition reduction weighting
+        assertThat(coalitionReduction.calculateValue(Red,Blue))
+                .isEqualTo(1 - coalitionReduction.getR());
+        //Opposite sides won, therefore back propogate a score of 0 (Loss)
+        assertThat(coalitionReduction.calculateValue(Red,MrX))
+                .isEqualTo(0);
+    }
 }
