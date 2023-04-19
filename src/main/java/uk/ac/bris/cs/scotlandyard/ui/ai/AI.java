@@ -15,8 +15,7 @@ public interface AI {
      * */
     static void runThreads(Node mctsTree, Pair<Long, TimeUnit> timeoutPair){
         try {
-            ThreadController controller = new ThreadController();
-            MCTS mcts = new MCTS(mctsTree, controller);
+            MCTS mcts = new MCTS(mctsTree);
 
             //cores in the cpu
             final int threadsUsed = Runtime.getRuntime().availableProcessors();

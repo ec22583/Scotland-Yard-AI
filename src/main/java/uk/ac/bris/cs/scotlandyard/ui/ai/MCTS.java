@@ -12,17 +12,14 @@ import java.util.Optional;
  * https://www.youtube.com/watch?v=wuSQpLinRB4
  */
 public class MCTS extends Thread {
-    final private ThreadController controller;
     final private Node mctsTree;
     final Heuristics.EGreedyPlayouts eGreedyPlayouts;
 
     /**
      * @param mctsTree the mcts tree to apply the algorithm to
-     * @param controller the thread used to stop execution of the mcts algorithm within the time limit
      * */
-    public MCTS (Node mctsTree, ThreadController controller) {
+    public MCTS (Node mctsTree) {
         this.mctsTree = mctsTree;
-        this.controller = controller;
         this.eGreedyPlayouts = new Heuristics.EGreedyPlayouts();
     }
 
@@ -68,7 +65,6 @@ public class MCTS extends Thread {
         //Cap numIterations at 30000 because there is no noticeable behavioural improvements after this point
         //Additionally it is also to make AI take their turn faster towards the end of the game
         this.iterationAlgorithm();
-        controller.incrementIteration();
     }
 
 }
