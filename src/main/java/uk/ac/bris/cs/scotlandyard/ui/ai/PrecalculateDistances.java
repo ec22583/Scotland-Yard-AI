@@ -58,9 +58,6 @@ public class PrecalculateDistances {
             dijkstras(startPosition, row);
         }
 
-        System.out.println(distances.values());
-        System.out.println("Finished running epic dijkstra's");
-
         FileWriter fileWriter = new FileWriter("./distances.txt");
 
         distances.rowMap().forEach((rowKey, columnSet) -> {
@@ -72,6 +69,8 @@ public class PrecalculateDistances {
                 }
             });
         });
+
+        System.out.println("Finished writing distances to 'distances.txt'");
 
         fileWriter.close();
     }

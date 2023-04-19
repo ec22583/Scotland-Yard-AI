@@ -69,8 +69,6 @@ public class Node {
         this.coalitionReduction = coalitionReduction;
         this.explorationCoefficient = explorationCoefficient;
 
-        System.out.println("Current turn: " + this.piece);
-
         //Application of the move filtering heuristic
         this.remainingMoves = applyMoveFilterHeuristic(gameState);
 
@@ -168,7 +166,6 @@ public class Node {
         for (Node child : this.children) {
             double currentScore = child.getTotalPlays();
             if (currentScore > bestScore) {
-                System.out.println("Found child with higher plays: " + child.getPreviousMove() + " " + child.getTotalPlays());
                 bestScore = currentScore;
                 bestChild = child;
             }

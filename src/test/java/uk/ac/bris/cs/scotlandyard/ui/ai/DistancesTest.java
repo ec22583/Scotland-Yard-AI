@@ -47,7 +47,6 @@ public class DistancesTest extends AITestBase {
 
             for (EndpointPair<Integer> edge : edges){
                 int neighbour = edge.nodeU();
-//                System.out.println(source + ";" + neighbour);
                 assertThat(distancesSingleton.get(source, neighbour)).isEqualTo(1);
                 assertThat(distancesSingleton.get(neighbour, source)).isEqualTo(1);
             }

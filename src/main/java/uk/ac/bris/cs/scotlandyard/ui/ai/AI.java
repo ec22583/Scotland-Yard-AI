@@ -23,8 +23,6 @@ public interface AI {
             //Runs for allocated turn time - 200ms
             final long milliseconds = timeoutPair.right().toMillis(timeoutPair.left()) - 200;
 
-            System.out.println("Number of \'available processors\': " + threadsUsed);
-
             ExecutorService executorService = Executors.newFixedThreadPool(threadsUsed);
 
             //Submit MCTS tasks per thread
@@ -39,9 +37,7 @@ public interface AI {
 //          Waits either for the service to shut down or for the time limit.
             executorService.awaitTermination(milliseconds, TimeUnit.MILLISECONDS);
             executorService.shutdownNow();
-            
 
-            System.out.format("Total number of iterations: %s\n", controller.getIterations());
 //      Not expected to receive an interrupt on current thread so just return early.
         }
         catch (InterruptedException e) {

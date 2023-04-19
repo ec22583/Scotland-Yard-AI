@@ -34,8 +34,6 @@ public class DetectiveAI implements AI{
         }
         this.possibleLocations = this.possibleLocations.updateLocations(board);
 
-        System.out.printf("Current locations: %s%n", this.possibleLocations.getLocations());
-
         List<Pair<AIGameState, Integer>> gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
 
 //      Remove any already winning game states since they are not possible.

@@ -517,7 +517,6 @@ public class HeuristicsTest extends AITestBase {
                         .parallel()
                         .allMatch(e -> {
                             Optional<ImmutableSet<Transport>> optionalTransports = graph.edgeValue(e);
-                            //System.out.println(optionalTransports);
                             if (optionalTransports.isEmpty())
                                 throw new IllegalArgumentException("Cannot find edge on graph");
                             return (optionalTransports.get().contains(ScotlandYard.Transport.TAXI));
