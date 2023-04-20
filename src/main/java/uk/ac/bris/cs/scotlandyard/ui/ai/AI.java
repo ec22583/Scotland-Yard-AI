@@ -26,7 +26,7 @@ public interface AI {
 
             //Submit MCTS tasks per thread
             //This is safe to do because mcts isn't stateful and therefore immune to data races
-            for (int i = 0; i < 30000; i++){
+            for (int i = 0; i < 50000; i++){
                 executorService.submit(mcts);
             }
 
@@ -35,6 +35,7 @@ public interface AI {
 
 //          Waits either for the service to shut down or for the time limit.
             executorService.awaitTermination(milliseconds, TimeUnit.MILLISECONDS);
+
             executorService.shutdownNow();
 
 //      Not expected to receive an interrupt on current thread so just return early.
