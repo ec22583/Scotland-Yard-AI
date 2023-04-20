@@ -6,7 +6,6 @@ import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.List;
 
 public class DistancesSingleton {
 
@@ -40,18 +39,18 @@ public class DistancesSingleton {
 			int[][] distancesArray = new int[dimensions][dimensions];
 			for (int i = 0; i < distanceStrings.length; i++) {
 				String distanceString = distanceStrings[i];
-				List<Integer> distance = Arrays
+				int[] distance = Arrays
 						.stream(distanceString.split(","))
-						.map(Integer::valueOf)
-						.toList();
-				if (distance.size() != 3) throw new IllegalStateException(
+						.mapToInt(Integer::valueOf)
+						.toArray();
+				if (distance.length != 3) throw new IllegalStateException(
 						"distances.txt not in correct format: Must be comma separated list of 3 items\n" +
 								"0. Starting location.\n" +
 								"1. End location.\n" +
 								"2. Distance"
 				);
 
-				distancesArray[distance.get(0) - 1][distance.get(1) - 1] = distance.get(2);
+				distancesArray[distance[0] - 1][distance[1] - 1] = distance[2];
 
 			}
 			return distancesArray;
