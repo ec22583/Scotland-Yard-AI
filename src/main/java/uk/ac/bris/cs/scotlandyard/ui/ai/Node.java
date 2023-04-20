@@ -13,7 +13,7 @@ import java.util.*;
  * Wins are from perspective of parent, unless node is root node, where wins are from
  * perspective of itself.
  * Use of Node class to store all MCTS logic partially inspired from:
- * https://www.youtube.com/watch?v=wuSQpLinRB4
+ * <a href="https://www.youtube.com/watch?v=wuSQpLinRB4">https://www.youtube.com/watch?v=wuSQpLinRB4</a>
  */
 public class Node {
     final private AIGameState gameState;

@@ -9,7 +9,7 @@ import java.util.Optional;
  * MCTS (Monte Carlo Tree Search) Algorithm
  *
  * Formatting of the steps of the algorithm slightly based on:
- * https://www.youtube.com/watch?v=wuSQpLinRB4
+ * <a href="https://www.youtube.com/watch?v=wuSQpLinRB4">https://www.youtube.com/watch?v=wuSQpLinRB4</a>
  */
 public class MCTS extends Thread {
     final private Node mctsTree;
