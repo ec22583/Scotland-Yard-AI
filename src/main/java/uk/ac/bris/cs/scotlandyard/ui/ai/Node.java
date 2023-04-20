@@ -44,7 +44,7 @@ public class Node {
                 .getAvailableMoves()
                 .asList()
                 .stream()
-                .filter(m -> m.commencedBy().equals(this.piece))
+//                .filter(m -> m.commencedBy().equals(this.piece))
                 .filter(m -> this.moveFilter.checkMove(m, gameState))
                 .toList());
     }
