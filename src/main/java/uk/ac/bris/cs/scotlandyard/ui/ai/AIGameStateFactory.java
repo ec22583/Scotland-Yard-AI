@@ -73,8 +73,14 @@ public class AIGameStateFactory {
                                                       List<LogEntry> log,
                                                       ImmutableSet<Piece> remaining){
 			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(detectives);
+			boolean mrXTurn = remaining.contains(Piece.MrX.MRX);
+			boolean detectivesHaveMoves = false;
 
-            boolean detectivesHaveMoves = false;
+//
+			if (mrXTurn) {
+				detectivesHaveMoves = true;
+			}
+
             for (Player detective : detectives) {
 //				If a detective and MrX in same place, detective wins.
                 if (detective.location() == mrX.location()) {
@@ -85,7 +91,7 @@ public class AIGameStateFactory {
                             .toList());
                 }
 //				Checks if any detectives have possible moves remaining.
-                if (!detectivesHaveMoves) {
+                if (!mrXTurn && !detectivesHaveMoves) {
 					if (!MyGameState.makeSingleMoves(
 							setup,
 							detectiveLocations,
@@ -288,15 +294,6 @@ public class AIGameStateFactory {
 		 */
 		public List<Integer> getDetectiveLocations () {
 			return getListOfDetectiveLocations(detectives);
-		}
-
-		/**
-		 * Extra added method to allow the AI to access MrX's position.
-		 *
-		 * @return Current position of Mr X
-		 */
-		public int getMrXLocation () {
-			return this.mrX.location();
 		}
 
 		/**
@@ -668,6 +665,59 @@ public class AIGameStateFactory {
 					move
 			);
 		}
+
+		/**
+		 *
+		 * @return List of
+			"mrxlocation," +
+			"detectivelocation1," +
+			"detectivelocation2," +
+			"detectivelocation3," +
+			"detectivelocation4," +
+			"detectivelocation5," +
+			"detective1taxi," +
+			"detective1bus," +
+			"detective1train," +
+			"detective2taxi," +
+			"detective2bus," +
+			"detective2train," +
+			"detective3taxi," +
+			"detective3bus," +
+			"detective3train," +
+			"detective4taxi," +
+			"detective4bus," +
+			"detective4train," +
+			"detective5taxi," +
+			"detective5bus," +
+			"detective5train," +
+			"mrxtaxi" +
+			"mrxbus" +
+			"mrxtrain" +
+			"mrxdouble" +
+			"mrxsecret" +
+			"turnsleft" +
+			"newmrxlocation" +
+		 */
+		public List<Integer> getGameStateList () {
+			List<Integer> output = new ArrayList<>();
+			output.add(mrX.location());
+			output.addAll(detectives.stream().map(Player::location).toList());
+			List<ImmutableMap<ScotlandYard.Ticket, Integer>> detectivesTickets = detectives.stream().map(d -> d.tickets()).toList();
+			for (ImmutableMap<ScotlandYard.Ticket, Integer> detectiveTickets : detectivesTickets) {
+				output.add(detectiveTickets.get(ScotlandYard.Ticket.TAXI));
+				output.add(detectiveTickets.get(ScotlandYard.Ticket.BUS));
+				output.add(detectiveTickets.get(ScotlandYard.Ticket.UNDERGROUND));
+			}
+			ImmutableMap<ScotlandYard.Ticket, Integer> mrXTickets = mrX.tickets();
+			output.add(mrXTickets.get(ScotlandYard.Ticket.TAXI));
+			output.add(mrXTickets.get(ScotlandYard.Ticket.BUS));
+			output.add(mrXTickets.get(ScotlandYard.Ticket.UNDERGROUND));
+			output.add(mrXTickets.get(ScotlandYard.Ticket.DOUBLE));
+			output.add(mrXTickets.get(ScotlandYard.Ticket.SECRET));
+			output.add(getSetup().moves.size() - getMrXTravelLog().size());
+
+			return output;
+		}
     }
 
     /**
@@ -748,7 +798,7 @@ public class AIGameStateFactory {
 	 * @return Initial game state for game
 	 */
 	@Nonnull
-	public Board.GameState build(
+	public AIGameState build(
 			GameSetup setup,
 			Player mrX,
 			ImmutableList<Player> detectives) {

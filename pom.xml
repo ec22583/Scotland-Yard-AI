@@ -154,6 +154,13 @@
 <!--            <version>4.13.2</version>-->
 <!--            <scope>compile</scope>-->
 <!--        </dependency>-->
+
+
+        <dependency>
+             <groupId>com.deepnetts</groupId>
+             <artifactId>deepnetts-core</artifactId>
+             <version>1.13.2</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -194,6 +201,26 @@
                 <configuration>
                     <mainClass>uk.ac.bris.cs.scotlandyard.Main</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>dataset</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>uk.ac.bris.cs.scotlandyard.ui.ai.GenerateDataSet</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>distances</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>uk.ac.bris.cs.scotlandyard.ui.ai.PrecalculateDistances</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -117,7 +117,7 @@ public class PrecalculateDistances {
         }
     }
 
-    public static void main () {
+    public static void main (String[] args) {
         PrecalculateDistances precalculateDistances = new PrecalculateDistances();
         try {
          precalculateDistances.run();
