@@ -79,7 +79,7 @@ public class PossibleLocationsFactory {
                         .map(edge -> edge.adjacentNode(oldPossibleLocation))
 
                         //Prune all possible locations that detectives are in
-                        .filter(l -> !detectiveLocationsSet.contains(l))
+//                        .filter(l -> !detectiveLocationsSet.contains(l))
                         .toList());
             }
             return builder.build();
@@ -135,7 +135,9 @@ public class PossibleLocationsFactory {
                 detectiveLocations = BoardHelpers.getDetectiveLocations(board);
             }
 
-            Set<Integer> newLocations = filterDetectiveLocationsFromLocations(this.getLocations(), detectiveLocations);
+//            Test for if accidentally pruning too many locations.
+            Set<Integer> newLocations = this.getLocations();
+//            Set<Integer> newLocations = filterDetectiveLocationsFromLocations(this.getLocations(), detectiveLocations);
 
             if (board.getMrXTravelLog().size() > this.turn) {
 //              Mr X has moved, so generate new possible locations and filter out any which detectives are in
@@ -145,6 +147,9 @@ public class PossibleLocationsFactory {
                     newLocations = newLocationsFromLogEntry(logEntry, newLocations, board, detectiveLocations);
                 }
             }
+
+            newLocations = filterDetectiveLocationsFromLocations(newLocations, detectiveLocations);
+
             return new MyPossibleLocations(newLocations, board.getMrXTravelLog().size());
         }
 

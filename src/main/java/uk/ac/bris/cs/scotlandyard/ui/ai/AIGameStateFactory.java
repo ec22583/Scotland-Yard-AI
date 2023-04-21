@@ -73,13 +73,7 @@ public class AIGameStateFactory {
                                                       List<LogEntry> log,
                                                       ImmutableSet<Piece> remaining){
 			List<Integer> detectiveLocations = MyGameState.getListOfDetectiveLocations(detectives);
-			boolean mrXTurn = remaining.contains(Piece.MrX.MRX);
 			boolean detectivesHaveMoves = false;
-
-//
-			if (mrXTurn) {
-				detectivesHaveMoves = true;
-			}
 
             for (Player detective : detectives) {
 //				If a detective and MrX in same place, detective wins.
@@ -91,7 +85,7 @@ public class AIGameStateFactory {
                             .toList());
                 }
 //				Checks if any detectives have possible moves remaining.
-                if (!mrXTurn && !detectivesHaveMoves) {
+                if (!detectivesHaveMoves) {
 					if (!MyGameState.makeSingleMoves(
 							setup,
 							detectiveLocations,

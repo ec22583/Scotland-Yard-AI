@@ -114,17 +114,23 @@ public class GenerateDataSet {
             if (aiGameState.getAvailableMoves().asList().get(0).commencedBy().equals(Piece.MrX.MRX)) {
                 mrXTurnCounter++;
                 lastState.addAll(aiGameState.getGameStateList());
+
                 Move move = myAi.pickMove(aiGameState, this.timeoutPair);
                 aiGameState = aiGameState.advance(move);
-                lastState.add(move.accept(new MoveVisitors.DestinationVisitor()));
-                try {
-                    String line = lastState.stream().map(String::valueOf).collect(Collectors.joining(","));
-                    this.output.append(line + "\n");
-                    this.output.flush();
+
+                if (aiGameState.getWinner().isEmpty()) {
+                    lastState.add(move.accept(new MoveVisitors.DestinationVisitor()));
+
+                    try {
+                        String line = lastState.stream().map(String::valueOf).collect(Collectors.joining(","));
+                        this.output.append(line + "\n");
+                        this.output.flush();
+                    } catch (IOException e) {
+                        System.err.println("Couldn't add to file");
+                        System.exit(1);
+                    }
+
                     lastState.clear();
-                } catch (IOException e) {
-                    System.err.println("Couldn't add to file");
-                    System.exit(1);
                 }
             } else {
                 Move move = myAi.pickMove(aiGameState, this.timeoutPair);
