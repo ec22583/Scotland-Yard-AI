@@ -213,6 +213,15 @@
                             <mainClass>uk.ac.bris.cs.scotlandyard.ui.ai.PrecalculateDistances</mainClass>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>min-distance-data</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>uk.ac.bris.cs.scotlandyard.ui.ai.GenerateMinDistanceData</mainClass>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

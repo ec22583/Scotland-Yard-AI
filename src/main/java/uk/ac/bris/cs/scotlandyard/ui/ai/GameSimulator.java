@@ -81,9 +81,12 @@ public class GameSimulator {
 
         while (aiGameState.getWinner().isEmpty()) {
             Move move = ai.pickMove(aiGameState, this.timeoutPair);
-            this.gameObservers.forEach(o -> o.onGameTurn(aiGameState, move));
+            AIGameState finalAiGameState = aiGameState;
+            this.gameObservers.forEach(o -> o.onGameTurn(finalAiGameState, move));
+            aiGameState = aiGameState.advance(move);
         }
 
-        this.gameObservers.forEach(o -> o.onGameWin(aiGameState));
+        AIGameState finalAiGameState1 = aiGameState;
+        this.gameObservers.forEach(o -> o.onGameWin(finalAiGameState1));
     }
 }

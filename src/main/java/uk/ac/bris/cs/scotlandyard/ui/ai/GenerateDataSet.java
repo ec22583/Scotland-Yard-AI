@@ -1,20 +1,19 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 import io.atlassian.fugue.Pair;
+import org.glassfish.grizzly.streams.BufferedInput;
 import uk.ac.bris.cs.scotlandyard.model.*;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class GenerateDataSet implements GameSimulator.GameObserver {
-    private MyAi myAi;
-    private FileWriter output;
+    private final FileWriter output;
 
     public GenerateDataSet (String filename) throws IOException {
-        this.myAi = new MyAi();
-        this.myAi.onStart();
         File file = new File(filename);
 
         if (file.exists()) {
@@ -77,7 +76,7 @@ public class GenerateDataSet implements GameSimulator.GameObserver {
 
                 try {
                     String line = lastState.stream().map(String::valueOf).collect(Collectors.joining(","));
-                    this.output.append(line + "\n");
+                    this.output.append(line).append("\n");
                     this.output.flush();
                 } catch (IOException e) {
                     System.err.println("Couldn't add to file");
@@ -88,8 +87,10 @@ public class GenerateDataSet implements GameSimulator.GameObserver {
         }
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     public static void main (String[] args) {
         try {
+            Scanner terminal = new Scanner(System.in);
             GenerateDataSet generateDataSet = new GenerateDataSet("dataset.txt");
             AIGameStateFactory aiGameStateFactory = new AIGameStateFactory();
 
@@ -104,9 +105,9 @@ public class GenerateDataSet implements GameSimulator.GameObserver {
 
             gameSimulator.registerObserver(generateDataSet);
 
-            int gameCounter = 0;
+
+//          Allows program to be closed with ^d
             while (true) {
-                gameCounter++;
                 gameSimulator.runGame();
                 System.gc();
             }

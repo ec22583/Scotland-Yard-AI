@@ -1,0 +1,6 @@
+category,total-hits,total-possible
+ONE,8,113
+TWO,12,271
+THREE,10,163
+FOUR,2,83
+FIVE_PLUS,0,22

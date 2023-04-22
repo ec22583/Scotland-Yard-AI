@@ -6,15 +6,18 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import com.google.common.io.Resources;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.Piece;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
-import javax.annotation.Nonnull;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.Buffer;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 //Wrapper class for all Heuristics (classes)
 public interface Heuristics {
@@ -44,7 +47,6 @@ public interface Heuristics {
 
         public static class RemoveFromFirstTwoRounds implements FilterStrategy {
             @Override
-            @NonNull
             public boolean execute(Move move, AIGameState gameState) {
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
@@ -62,7 +64,6 @@ public interface Heuristics {
 
         public static class RemoveFromRevealingRound implements FilterStrategy {
             @Override
-            @Nonnull
             public boolean execute(Move move, AIGameState gameState) {
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
 
@@ -70,9 +71,9 @@ public interface Heuristics {
                 for (int i = 0; i < tickets.size(); i++) {
 
                     //first part: check if item is a secret ticket
-                    //second part: check if it's a revaling round (+i to block the double move if move overlaps)
+                    //second part: check if it's a revealing round (+i to block the double move if move overlaps)
                     if (tickets.get(i).equals(ScotlandYard.Ticket.SECRET)
-                            && gameState.getSetup().moves.get(gameState.getMrXTravelLog().size() + i) == true) {
+                            && gameState.getSetup().moves.get(gameState.getMrXTravelLog().size() + i)) {
                         disallowed = true;
                     }
                 }
@@ -82,9 +83,9 @@ public interface Heuristics {
             }
         }
 
+        @SuppressWarnings("UnstableApiUsage")
         public static class AllPossibleLocationsHaveTaxis implements FilterStrategy {
             @Override
-            @Nonnull
             public boolean execute(Move move, AIGameState gameState) {
                 List<ScotlandYard.Ticket> tickets = move.accept(new MoveVisitors.TicketVisitor());
                 ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph =
@@ -260,34 +261,129 @@ public interface Heuristics {
             }
         }
 
-        class LocationCategorization {
-            public static void generate () {
+         interface LocationCategorization {
+             class MinDistanceData {
+                 ImmutableMap<MinDistance, Category> data;
 
-            }
+                 private MinDistanceData(ImmutableMap<MinDistance, Category> data) {
+                     this.data = data;
+                 }
 
+                 static public MinDistanceData buildInitial () {
+                     ImmutableMap.Builder<MinDistance, Category> builder = ImmutableMap.builder();
+                     Arrays.stream(MinDistance.values()).forEach(o -> builder.put(o, new Category()));
+                     return new MinDistanceData(builder.build());
+                 }
 
+                 static public MinDistanceData buildFromContinuedFile (File file) {
+                     ImmutableMap.Builder<MinDistance, Category> builder = ImmutableMap.builder();
 
-            /**
-             * Inner class for {@link LocationCategorization}. Used to store data for a category.
-             * @param <T> The type used for categories.
-             */
-            class CategoryType<T> {
-                int totalSamples;
-                ImmutableMap<T, Integer> data;
+                     try {
 
-                public CategoryType (int totalSamples, Map<T, Integer> data) {
-                    this.totalSamples = totalSamples;
-                    this.data = ImmutableMap.copyOf(data);
-                }
+//                         String input = Resources.toString(
+//                             Resources.getResource("min-distance-data.txt"),
+//                             StandardCharsets.UTF_8
+//                        );
 
-                public int getTotalSamples() {
-                    return totalSamples;
-                }
+                         BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
 
-                public int getCategory (T category) {
-                    return data.getOrDefault(category, 0);
-                }
-            }
-        }
+//                       Skip header
+                         bufferedReader.readLine();
 
+                         String input = bufferedReader.readLine();
+                         while(input != null) {
+                             String[] fields = input.split(",");
+                             if (fields.length != 3) throw new IllegalStateException("File in invalid format");
+                             builder.put(MinDistance.valueOf(fields[0]), new Category(Integer.parseInt(fields[1]), Integer.parseInt(fields[2])));
+
+                             input = bufferedReader.readLine();
+                         }
+
+                     } catch (IOException e) {
+                         System.out.println("Cannot read 'min-distance-data.txt'");
+                         System.exit(1);
+                     }
+
+                     return new MinDistanceData(builder.build());
+                 }
+
+                 public int getTotalHits(MinDistance category) {
+                     return this.data.get(category).getTotalHits();
+                 }
+
+                 public int getTotalPossible(MinDistance category) {
+                     return this.data.get(category).getTotalPossible();
+                 }
+
+                 public void addHit(MinDistance category) {
+                     this.data.get(category).addHit();
+                 }
+
+                 public void addMiss(MinDistance category) {
+                     this.data.get(category).addMiss();
+                 }
+
+                 static private class Category {
+                     private int totalHits;
+                     private int totalPossible;
+
+                     public Category() {
+                         this.totalHits = 0;
+                         this.totalPossible = 0;
+                     }
+
+                     public Category(int totalHits, int totalPossible) {
+                         this.totalHits = totalHits;
+                         this.totalPossible = totalPossible;
+                     }
+
+                     public int getTotalHits() {
+                         return this.totalHits;
+                     }
+
+                     public int getTotalPossible() {
+                         return this.totalPossible;
+                     }
+
+                     public void addHit() {
+                         this.totalPossible++;
+                         this.totalHits++;
+                     }
+
+                     public void addMiss() {
+                         this.totalPossible++;
+                     }
+                 }
+             }
+
+             enum MinDistance {
+                 ONE,
+                 TWO,
+                 THREE,
+                 FOUR,
+                 FIVE_PLUS;
+
+                 public static MinDistance getCategoryFromDistance(int distance) {
+                     if (distance <= 0) throw new IllegalArgumentException("Distance must be > 0");
+
+                     switch (distance) {
+                         case 1 -> {
+                             return ONE;
+                         }
+                         case 2 -> {
+                             return TWO;
+                         }
+                         case 3 -> {
+                             return THREE;
+                         }
+                         case 4 -> {
+                             return FOUR;
+                         }
+                         default -> {
+                             return FIVE_PLUS;
+                         }
+                     }
+                 }
+             }
+         }
 }
