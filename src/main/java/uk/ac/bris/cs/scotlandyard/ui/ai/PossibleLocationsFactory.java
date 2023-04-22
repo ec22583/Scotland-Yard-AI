@@ -146,9 +146,9 @@ public class PossibleLocationsFactory {
                 for (LogEntry logEntry : logEntries) {
                     newLocations = newLocationsFromLogEntry(logEntry, newLocations, board, detectiveLocations);
                 }
+            } else {
+                newLocations = filterDetectiveLocationsFromLocations(newLocations, detectiveLocations);
             }
-
-            newLocations = filterDetectiveLocationsFromLocations(newLocations, detectiveLocations);
 
             return new MyPossibleLocations(newLocations, board.getMrXTravelLog().size());
         }

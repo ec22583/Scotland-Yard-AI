@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import com.google.common.collect.ImmutableSet;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.GameSetup;
 import uk.ac.bris.cs.scotlandyard.model.Move;
@@ -12,6 +13,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static uk.ac.bris.cs.scotlandyard.ui.ai.Heuristics.*;
@@ -71,7 +73,7 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
             this.data.addHit(MinDistance.getCategoryFromDistance(realMinDistance));
 
 //          Updates map with possible locations.
-            this.possibleLocations
+            Set<MinDistance> minDistanceSet = ImmutableSet.copyOf(this.possibleLocations
                     .getLocations()
                     .stream()
                     .filter(l -> !(l == mrXLocation))
@@ -81,7 +83,10 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
                                 .mapToInt(Integer::intValue)
                                 .min()
                                 .orElseThrow())
-                    .forEach(d -> this.data.addMiss(MinDistance.getCategoryFromDistance(d)));
+                    .map(MinDistance::getCategoryFromDistance)
+                    .toList());
+
+            minDistanceSet.forEach(d -> this.data.addMiss(d));
 
             this.writeDataToFile();
             System.out.println("Writing update to file");
