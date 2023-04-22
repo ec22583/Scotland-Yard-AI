@@ -1,0 +1,89 @@
+package uk.ac.bris.cs.scotlandyard.ui.ai;
+
+import com.google.common.collect.ImmutableList;
+import io.atlassian.fugue.Pair;
+import uk.ac.bris.cs.scotlandyard.model.*;
+
+import javax.annotation.Nonnull;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Allows games to be simulated for the generation of statistical data about the AI.
+ */
+public class GameSimulator {
+    private final List<GameObserver> gameObservers;
+    private final GameSetup gameSetup;
+    private final AIGameStateFactory aiGameStateFactory;
+    private final Pair<Long, TimeUnit> timeoutPair;
+    private final MyAi ai;
+
+    public interface GameObserver {
+        default void onGameTurn(AIGameState aiGameState, Move move) {}
+
+        default void onGameWin(AIGameState aiGameState) {}
+    }
+
+    public GameSimulator (GameSetup gameSetup, AIGameStateFactory aiGameStateFactory, Pair<Long, TimeUnit> timeoutPair) {
+        this.ai = new MyAi();
+        this.ai.onStart();
+
+//      Ensures that AI is properly shut down when program closes
+//      (based from https://stackoverflow.com/questions/5824049/running-a-method-when-closing-the-program)
+        Runtime.getRuntime().addShutdownHook(new Thread(this.ai::onTerminate));
+
+        this.timeoutPair = timeoutPair;
+        this.aiGameStateFactory = aiGameStateFactory;
+        this.gameObservers = new LinkedList<>();
+        this.gameSetup = gameSetup;
+    }
+
+    public void registerObserver (@Nonnull GameObserver gameObserver) {
+        Objects.requireNonNull(gameObserver);
+
+        if (this.gameObservers.contains(gameObserver)) throw new IllegalArgumentException("Observer already registered");
+
+        this.gameObservers.add(gameObserver);
+    }
+
+    public void deregisterObserver (@Nonnull GameObserver gameObserver) {
+        Objects.requireNonNull(gameObserver);
+
+        if (!this.gameObservers.contains(gameObserver)) throw new IllegalArgumentException("Observer not registered");
+
+        this.gameObservers.remove(gameObserver);
+    }
+
+    public void runGame () {
+        Piece.Detective[] detectiveColors = Piece.Detective.values();
+        ImmutableList<Integer> detectiveLocations = ScotlandYard.generateDetectiveLocations(new Random().nextInt(), 5);
+
+        Player mrX = new Player(
+            Piece.MrX.MRX,
+            ScotlandYard.defaultMrXTickets(),
+            ScotlandYard.generateMrXLocation(new Random().nextInt())
+        );
+
+        List<Player> detectives = new ArrayList<>(5);
+        for (int i = 0; i < 5; i++) {
+            detectives.add(new Player(
+                    detectiveColors[i],
+                    ScotlandYard.defaultDetectiveTickets(),
+                    detectiveLocations.get(i)
+            ));
+        }
+
+        AIGameState aiGameState = aiGameStateFactory.build(
+                gameSetup,
+                mrX,
+                ImmutableList.copyOf(detectives)
+        );
+
+        while (aiGameState.getWinner().isEmpty()) {
+            Move move = ai.pickMove(aiGameState, this.timeoutPair);
+            this.gameObservers.forEach(o -> o.onGameTurn(aiGameState, move));
+        }
+
+        this.gameObservers.forEach(o -> o.onGameWin(aiGameState));
+    }
+}

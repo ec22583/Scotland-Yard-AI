@@ -2,6 +2,7 @@ package uk.ac.bris.cs.scotlandyard.ui.ai;
 
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.ImmutableValueGraph;
@@ -11,8 +12,8 @@ import uk.ac.bris.cs.scotlandyard.model.Piece;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 //Wrapper class for all Heuristics (classes)
@@ -256,6 +257,36 @@ public interface Heuristics {
 
             public double getDetectiveCoefficient() {
                 return 2.0;
+            }
+        }
+
+        class LocationCategorization {
+            public static void generate () {
+
+            }
+
+
+
+            /**
+             * Inner class for {@link LocationCategorization}. Used to store data for a category.
+             * @param <T> The type used for categories.
+             */
+            class CategoryType<T> {
+                int totalSamples;
+                ImmutableMap<T, Integer> data;
+
+                public CategoryType (int totalSamples, Map<T, Integer> data) {
+                    this.totalSamples = totalSamples;
+                    this.data = ImmutableMap.copyOf(data);
+                }
+
+                public int getTotalSamples() {
+                    return totalSamples;
+                }
+
+                public int getCategory (T category) {
+                    return data.getOrDefault(category, 0);
+                }
             }
         }
 

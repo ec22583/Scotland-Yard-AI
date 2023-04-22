@@ -154,13 +154,6 @@
 <!--            <version>4.13.2</version>-->
 <!--            <scope>compile</scope>-->
 <!--        </dependency>-->
-
-
-        <dependency>
-             <groupId>com.deepnetts</groupId>
-             <artifactId>deepnetts-core</artifactId>
-             <version>1.13.2</version>
-        </dependency>
     </dependencies>
 
     <build>
