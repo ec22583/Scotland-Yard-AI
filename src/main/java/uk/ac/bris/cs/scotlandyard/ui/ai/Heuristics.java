@@ -263,18 +263,25 @@ public interface Heuristics {
 
          interface LocationCategorization {
              class MinDistanceData {
-                 ImmutableMap<MinDistance, Category> data;
+                 private ImmutableMap<MinDistance, Category> data;
 
                  private MinDistanceData(ImmutableMap<MinDistance, Category> data) {
                      this.data = data;
                  }
 
                  static public MinDistanceData buildInitial () {
+                     //Create a builder instance for immutable maps
                      ImmutableMap.Builder<MinDistance, Category> builder = ImmutableMap.builder();
                      Arrays.stream(MinDistance.values()).forEach(o -> builder.put(o, new Category()));
                      return new MinDistanceData(builder.build());
                  }
 
+                 /**
+                  * Extract minimum distance data from a file
+                  * @param file file to be used as the data set
+                  * @throws IllegalStateException if file is not in a valid format.
+                  * @throws IOException if it is unable to read the file given.
+                  * */
                  static public MinDistanceData buildFromContinuedFile (File file) {
                      ImmutableMap.Builder<MinDistance, Category> builder = ImmutableMap.builder();
 
@@ -285,6 +292,7 @@ public interface Heuristics {
 //                             StandardCharsets.UTF_8
 //                        );
 
+                         //buffers the characters in the file for efficient reading
                          BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
 
 //                       Skip header
@@ -292,9 +300,17 @@ public interface Heuristics {
 
                          String input = bufferedReader.readLine();
                          while(input != null) {
+                             //Splits the strign every comma
                              String[] fields = input.split(",");
+
+                             //Must have three arguments: Category, total hits and total possible
                              if (fields.length != 3) throw new IllegalStateException("File in invalid format");
-                             builder.put(MinDistance.valueOf(fields[0]), new Category(Integer.parseInt(fields[1]), Integer.parseInt(fields[2])));
+                             builder.put(
+                                     MinDistance.valueOf(fields[0]),
+
+                                             //Construct a category object with given total hits and total possible
+                                             new Category(Integer.parseInt(fields[1]), Integer.parseInt(fields[2]))
+                             );
 
                              input = bufferedReader.readLine();
                          }
@@ -324,9 +340,14 @@ public interface Heuristics {
                  }
 
                  static private class Category {
+
+                     //Total correct locations of Mr X
                      private int totalHits;
+
+                     //Total number of times it was possible for it to be alocation of Mr X
                      private int totalPossible;
 
+                     //Default constructor
                      public Category() {
                          this.totalHits = 0;
                          this.totalPossible = 0;
@@ -356,6 +377,10 @@ public interface Heuristics {
                  }
              }
 
+             /**
+              * Minimum distance from a detective to Mr X.
+              * Categorized by distance in stations
+              * */
              enum MinDistance {
                  ONE,
                  TWO,
@@ -363,25 +388,19 @@ public interface Heuristics {
                  FOUR,
                  FIVE_PLUS;
 
+                 /**
+                  * Given an int return the category.
+                  * @throws IllegalArgumentException if int given is less than 0
+                  * */
                  public static MinDistance getCategoryFromDistance(int distance) {
                      if (distance <= 0) throw new IllegalArgumentException("Distance must be > 0");
 
                      switch (distance) {
-                         case 1 -> {
-                             return ONE;
-                         }
-                         case 2 -> {
-                             return TWO;
-                         }
-                         case 3 -> {
-                             return THREE;
-                         }
-                         case 4 -> {
-                             return FOUR;
-                         }
-                         default -> {
-                             return FIVE_PLUS;
-                         }
+                         case 1 -> {return ONE;}
+                         case 2 -> {return TWO;}
+                         case 3 -> {return THREE;}
+                         case 4 -> {return FOUR;}
+                         default -> {return FIVE_PLUS;}
                      }
                  }
              }

@@ -13,6 +13,9 @@ import java.util.stream.Collectors;
 public class GenerateDataSet implements GameSimulator.GameObserver {
     private final FileWriter output;
 
+    /**
+     * @throws IOException can't close the data set file or find the file
+     * */
     public GenerateDataSet (String filename) throws IOException {
         File file = new File(filename);
 
@@ -65,9 +68,16 @@ public class GenerateDataSet implements GameSimulator.GameObserver {
         }));
     }
 
+    /**
+     * @param  aiGameState AI game state to modify
+     * @param move move to use.
+     * */
     @Override
     public void onGameTurn (AIGameState aiGameState, Move move) {
+
+        //If AI is mr X
         if (aiGameState.getAvailableMoves().asList().get(0).commencedBy().equals(Piece.MrX.MRX)) {
+
 
             if (aiGameState.advance(move).getWinner().isEmpty()) {
                 List<Integer> lastState = new ArrayList<>(25);

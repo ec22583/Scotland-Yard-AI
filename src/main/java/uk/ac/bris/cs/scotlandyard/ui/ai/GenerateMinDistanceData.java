@@ -30,7 +30,8 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
         File file = new File("min-distance-data.txt");
         if (file.exists()) {
             this.data = LocationCategorization.MinDistanceData.buildFromContinuedFile(file);
-        } else {
+        }
+        else {
             this.data = LocationCategorization.MinDistanceData.buildInitial();
         }
 
