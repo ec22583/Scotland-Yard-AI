@@ -76,7 +76,7 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
 
         if (aiGameState.getWinner().isEmpty() && move.commencedBy().equals(Piece.MrX.MRX)) {
             List<Integer> detectiveLocations = aiGameState.getDetectiveLocations();
-            int mrXLocation = move.source();
+            int mrXLocation = aiGameState.getMrXLocation();
 
             int realMinDistance = detectiveLocations
                     .stream()
