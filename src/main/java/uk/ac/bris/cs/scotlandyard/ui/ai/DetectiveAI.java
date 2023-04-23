@@ -9,6 +9,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class DetectiveAI implements PlayerAI {
@@ -18,14 +20,16 @@ public class DetectiveAI implements PlayerAI {
     final private PossibleLocationsFactory possibleLocationsFactory;
     final private DistancesSingleton distances;
     private Heuristics.LocationCategorization.MinDistanceData minDistanceData;
+    private final ExecutorService executorService;
 
     /**
      * @param distances Table of precalculated distances for graph.
      *  */
-    public DetectiveAI (DistancesSingleton distances) {
+    public DetectiveAI (ExecutorService executorService, DistancesSingleton distances) {
         this.distances = distances;
         this.aiGameStateFactory = new AIGameStateFactory();
         this.possibleLocationsFactory = new PossibleLocationsFactory();
+        this.executorService = executorService;
 
         try {
             this.minDistanceData = Heuristics.LocationCategorization.MinDistanceData.buildFromResources();
@@ -40,7 +44,7 @@ public class DetectiveAI implements PlayerAI {
      * Filter out winning game states
      * @param gameStates gamestates to be inspected as winning game states
      * */
-    private List<Pair<AIGameState, Integer>> removeWinningGamestates(List<Pair<AIGameState, Integer>> gameStates){
+    private List<Pair<AIGameState, Integer>> removeWinningGameStates(List<Pair<AIGameState, Integer>> gameStates){
         return gameStates
                 .stream()
                 .filter(s ->
@@ -98,7 +102,7 @@ public class DetectiveAI implements PlayerAI {
         List<Integer> detectiveLocations = gameStates.get(0).left().getDetectiveLocations();
 
 //      Remove any already winning game states since they are not possible.
-        gameStates = removeWinningGamestates(gameStates);
+        gameStates = removeWinningGameStates(gameStates);
 
 //      Pairs of game states and their weightings for random selection.
         List<Pair<AIGameState, Double>> weightedGameStates = createWeightedGameStates(gameStates, detectiveLocations);
@@ -124,6 +128,6 @@ public class DetectiveAI implements PlayerAI {
             i++;
         }
 
-        return PlayerAI.runMCTSForGameState(gameState, possibleLocations, timeoutPair, BUFFER);
+        return PlayerAI.runMCTSForGameState(gameState, possibleLocations, timeoutPair, BUFFER, this.executorService);
     }
 }

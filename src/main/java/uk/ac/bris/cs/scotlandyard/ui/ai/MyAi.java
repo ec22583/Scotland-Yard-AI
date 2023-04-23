@@ -1,12 +1,11 @@
 package uk.ac.bris.cs.scotlandyard.ui.ai;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import javax.annotation.Nonnull;
 
-import com.google.common.collect.ImmutableTable;
-import com.google.common.collect.Table;
 import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Ai;
 import uk.ac.bris.cs.scotlandyard.model.Board;
@@ -17,8 +16,14 @@ public class MyAi implements Ai {
 	private DetectiveAI detectiveAI;
 
 	public void onStart() {
-		this.mrXAI = new MrXAI();
-		this.detectiveAI = new DetectiveAI(DistancesSingleton.getInstance());
+		ExecutorService executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+
+//      Ensures that executor service closed when the program is shut down.
+//      (based on https://stackoverflow.com/questions/5824049/running-a-method-when-closing-the-program)
+        Runtime.getRuntime().addShutdownHook(new Thread(executorService::shutdownNow));
+
+		this.mrXAI = new MrXAI(executorService);
+		this.detectiveAI = new DetectiveAI(executorService, DistancesSingleton.getInstance());
 	}
 
 	/**

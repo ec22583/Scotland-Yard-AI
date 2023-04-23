@@ -1,6 +1,0 @@
-category,total-hits,total-possible
-ONE,155,1608
-TWO,1253,1879
-THREE,602,1393
-FOUR,102,457
-FIVE_PLUS,6,148

@@ -11,10 +11,12 @@ public class MrXAI implements PlayerAI {
     private final AIGameStateFactory aiGameStateFactory;
     private PossibleLocations possibleLocations;
     private final PossibleLocationsFactory possibleLocationsFactory;
+    private final ExecutorService executorService;
 
-    public MrXAI () {
+    public MrXAI (ExecutorService executorService) {
         this.aiGameStateFactory = new AIGameStateFactory();
         this.possibleLocationsFactory = new PossibleLocationsFactory();
+        this.executorService = executorService;
     }
 
     /**
@@ -35,7 +37,8 @@ public class MrXAI implements PlayerAI {
                 gameState,
                 possibleLocations,
                 timeoutPair,
-                BUFFER
+                BUFFER,
+                this.executorService
         );
     }
 }

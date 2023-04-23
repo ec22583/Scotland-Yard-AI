@@ -4,6 +4,8 @@ import io.atlassian.fugue.Pair;
 import uk.ac.bris.cs.scotlandyard.model.Board;
 import uk.ac.bris.cs.scotlandyard.model.Move;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -16,37 +18,17 @@ public interface PlayerAI {
      * @param mctsTree the MCTS tree in which the agent uses
      * @param timeout Maximum time for iterations to run in milliseconds.
      * */
-    static void runThreads(Node mctsTree, long timeout){
+    static void runThreads(Node mctsTree, long timeout, ExecutorService executorService) {
         try {
             MCTS mcts = new MCTS(mctsTree);
+            Callable<Object> callableMCTS = Executors.callable(mcts);
 
-            //cores in the cpu
-            final int threadsUsed = Runtime.getRuntime().availableProcessors();
-
-            ExecutorService executorService = Executors.newFixedThreadPool(threadsUsed);
-
-//          Ensures that threads are closed when the program is shut down. (Prevent lingering thread errors)
-//          (based on https://stackoverflow.com/questions/5824049/running-a-method-when-closing-the-program)
-            Thread shutdownThread = new Thread(executorService::shutdownNow);
-            Runtime.getRuntime().addShutdownHook(shutdownThread);
-
-
-            //Submit MCTS tasks per thread
-            //This is safe to do because mcts isn't stateful and therefore immune to data races
+            List<Callable<Object>> mctsList = new ArrayList<>(50000);
             for (int i = 0; i < 50000; i++){
-                executorService.submit(mcts);
+                mctsList.add(callableMCTS);
             }
 
-//          Shuts down the service but allows already queued tasks to run.
-            executorService.shutdown();
-
-//          Waits either for the service to shut down or for the time limit.
-            if (!executorService.awaitTermination(timeout, TimeUnit.MILLISECONDS)) {
-                executorService.shutdownNow();
-            }
-
-//          Stops shutdown being called on already shut down service.
-            Runtime.getRuntime().removeShutdownHook(shutdownThread);
+            executorService.invokeAll(mctsList, timeout, TimeUnit.MILLISECONDS);
 
 //      Not expected to receive an interrupt on current thread so just return early.
         }
@@ -66,7 +48,8 @@ public interface PlayerAI {
             AIGameState gameState,
             PossibleLocations possibleLocations,
             Pair<Long, TimeUnit> timeoutPair,
-            long BUFFER ){
+            long BUFFER,
+            ExecutorService executorService){
 
         Node mctsTree = new Node(
                 gameState,
@@ -78,7 +61,7 @@ public interface PlayerAI {
 
         long timeToRun = timeoutPair.right().toMillis(timeoutPair.left()) - BUFFER;
 
-        PlayerAI.runThreads(mctsTree, timeToRun);
+        PlayerAI.runThreads(mctsTree, timeToRun, executorService);
 
         return mctsTree.getBestChild().getPreviousMove();
     }
