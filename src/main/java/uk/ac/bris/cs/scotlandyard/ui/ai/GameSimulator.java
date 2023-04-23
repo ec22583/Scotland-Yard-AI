@@ -24,6 +24,11 @@ public class GameSimulator {
         default void onGameWin(AIGameState aiGameState) {}
     }
 
+    /**
+     * @param gameSetup board for the game
+     * @param aiGameStateFactory factory to generate the game states for the AI
+     * @param timeoutPair amount of time the thread lasts for
+     * */
     public GameSimulator (GameSetup gameSetup, AIGameStateFactory aiGameStateFactory, Pair<Long, TimeUnit> timeoutPair) {
         this.ai = new MyAi();
         this.ai.onStart();
@@ -38,6 +43,11 @@ public class GameSimulator {
         this.gameSetup = gameSetup;
     }
 
+    /**
+     * Adds an observer to the game simulator
+     * @param gameObserver game observer to feed into the function
+     * @throws IllegalArgumentException if there already exists an observer
+     * */
     public void registerObserver (@Nonnull GameObserver gameObserver) {
         Objects.requireNonNull(gameObserver);
 
@@ -46,6 +56,11 @@ public class GameSimulator {
         this.gameObservers.add(gameObserver);
     }
 
+    /**
+     * Remove an observer to the game simulator
+     * @param gameObserver game observer to deregister into the function
+     * @throws IllegalArgumentException if there does not exists an observer
+     * */
     public void deregisterObserver (@Nonnull GameObserver gameObserver) {
         Objects.requireNonNull(gameObserver);
 
@@ -54,6 +69,9 @@ public class GameSimulator {
         this.gameObservers.remove(gameObserver);
     }
 
+    /**
+     * Start simulation of the game to genderate the dataset
+     * */
     public void runGame () {
         Piece.Detective[] detectiveColors = Piece.Detective.values();
         ImmutableList<Integer> detectiveLocations = ScotlandYard.generateDetectiveLocations(new Random().nextInt(), 5);
@@ -79,6 +97,7 @@ public class GameSimulator {
                 ImmutableList.copyOf(detectives)
         );
 
+        //Run until winner
         while (aiGameState.getWinner().isEmpty()) {
             Move move = ai.pickMove(aiGameState, this.timeoutPair);
             AIGameState finalAiGameState = aiGameState;
