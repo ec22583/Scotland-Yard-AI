@@ -90,7 +90,6 @@ public class GenerateDataSet implements GameSimulator.GameObserver {
     @SuppressWarnings("UnstableApiUsage")
     public static void main (String[] args) {
         try {
-            Scanner terminal = new Scanner(System.in);
             GenerateDataSet generateDataSet = new GenerateDataSet("dataset.txt");
             AIGameStateFactory aiGameStateFactory = new AIGameStateFactory();
 

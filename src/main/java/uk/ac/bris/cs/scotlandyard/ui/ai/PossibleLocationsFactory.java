@@ -79,7 +79,7 @@ public class PossibleLocationsFactory {
                         .map(edge -> edge.adjacentNode(oldPossibleLocation))
 
                         //Prune all possible locations that detectives are in
-//                        .filter(l -> !detectiveLocationsSet.contains(l))
+                        .filter(l -> !detectiveLocationsSet.contains(l))
                         .toList());
             }
             return builder.build();

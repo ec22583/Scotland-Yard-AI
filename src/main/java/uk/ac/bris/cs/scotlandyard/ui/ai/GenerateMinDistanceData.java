@@ -58,6 +58,13 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
     @Override
     public void onGameTurn (AIGameState aiGameState, Move move) {
         this.possibleLocations = this.possibleLocations.updateLocations(aiGameState);
+//        System.out.println("------------------------------------------------------------");
+//        System.out.println("Possible locations: " + this.possibleLocations.getLocations());
+//        System.out.println("Detective locations: " + aiGameState.getDetectiveLocations());
+//        System.out.println("Mr X Location: " + aiGameState.getMrXLocation());
+//        System.out.println("Move: " + move);
+//        System.out.println("Turn number: " + aiGameState.getMrXTravelLog().size());
+//        System.out.println("------------------------------------------------------------");
 
         if (move.commencedBy().equals(Piece.MrX.MRX)) {
             List<Integer> detectiveLocations = aiGameState.getDetectiveLocations();
@@ -76,7 +83,6 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
             Set<MinDistance> minDistanceSet = ImmutableSet.copyOf(this.possibleLocations
                     .getLocations()
                     .stream()
-                    .filter(l -> !(l == mrXLocation))
                     .map(l -> detectiveLocations
                                 .stream()
                                 .map(d -> this.distances.get(d, l))
@@ -96,8 +102,6 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
     @SuppressWarnings("UnstableApiUsage")
     public static void main (String[] args) {
         try {
-
-            Scanner terminal = new Scanner(System.in);
             AIGameStateFactory aiGameStateFactory = new AIGameStateFactory();
             GenerateMinDistanceData generateMinDistanceData = new GenerateMinDistanceData();
 

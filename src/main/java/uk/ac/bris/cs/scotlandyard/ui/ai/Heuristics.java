@@ -346,7 +346,6 @@ public interface Heuristics {
                      }
 
                      public void addHit() {
-                         this.totalPossible++;
                          this.totalHits++;
                      }
 

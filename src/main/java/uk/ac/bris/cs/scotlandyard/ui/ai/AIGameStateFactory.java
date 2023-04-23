@@ -290,6 +290,10 @@ public class AIGameStateFactory {
 			return getListOfDetectiveLocations(detectives);
 		}
 
+		public int getMrXLocation () {
+			return this.mrX.location();
+		}
+
 		/**
 		 * Helper method to get all moves which use a single ticket for player and add
 		 * them to passed in builder.

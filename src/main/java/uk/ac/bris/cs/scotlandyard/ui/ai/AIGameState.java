@@ -22,6 +22,13 @@ public interface AIGameState extends Board.GameState {
     List<Integer> getDetectiveLocations();
 
     /**
+     * Gets the current location for Mr X.
+     *
+     * @return Current Mr X location for game state.
+     */
+    int getMrXLocation();
+
+    /**
      * Advances the game state to the new game state based on the input move.
      * @param move The move to carry out
      * @return The updated game state

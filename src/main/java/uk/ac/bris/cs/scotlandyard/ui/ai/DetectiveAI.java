@@ -29,7 +29,7 @@ public class DetectiveAI implements AI{
      * */
     @Override @Nonnull
     public Move generateBestMove(Board board, Pair<Long, TimeUnit> timeoutPair) {
-        if (this.possibleLocations == null) {
+        if (this.possibleLocations == null || board.getMrXTravelLog().size() <= 1) {
             this.possibleLocations = possibleLocationsFactory.buildInitialLocations();
         }
         this.possibleLocations = this.possibleLocations.updateLocations(board);
