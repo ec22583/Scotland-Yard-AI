@@ -114,8 +114,6 @@ public class GenerateDataSet implements GameSimulator.GameObserver {
 
             gameSimulator.registerObserver(generateDataSet);
 
-
-//          Allows program to be closed with ^d
             while (true) {
                 gameSimulator.runGame();
                 System.gc();

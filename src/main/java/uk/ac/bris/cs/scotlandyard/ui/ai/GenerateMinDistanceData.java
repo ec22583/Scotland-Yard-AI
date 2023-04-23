@@ -24,7 +24,7 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
     private final DistancesSingleton distances;
     private PossibleLocations possibleLocations;
 
-    public GenerateMinDistanceData () {
+    public GenerateMinDistanceData () throws IOException {
         this.distances = DistancesSingleton.getInstance();
 
         File file = new File("min-distance-data.txt");
@@ -59,13 +59,13 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
     @Override
     public void onGameTurn (AIGameState aiGameState, Move move) {
         this.possibleLocations = this.possibleLocations.updateLocations(aiGameState);
-//        System.out.println("------------------------------------------------------------");
-//        System.out.println("Possible locations: " + this.possibleLocations.getLocations());
-//        System.out.println("Detective locations: " + aiGameState.getDetectiveLocations());
-//        System.out.println("Mr X Location: " + aiGameState.getMrXLocation());
-//        System.out.println("Move: " + move);
-//        System.out.println("Turn number: " + aiGameState.getMrXTravelLog().size());
-//        System.out.println("------------------------------------------------------------");
+        System.out.println("------------------------------------------------------------");
+        System.out.println("Possible locations: " + this.possibleLocations.getLocations());
+        System.out.println("Detective locations: " + aiGameState.getDetectiveLocations());
+        System.out.println("Mr X Location: " + aiGameState.getMrXLocation());
+        System.out.println("Move: " + move);
+        System.out.println("Turn number: " + aiGameState.getMrXTravelLog().size());
+        System.out.println("------------------------------------------------------------");
 
         if (move.commencedBy().equals(Piece.MrX.MRX)) {
             List<Integer> detectiveLocations = aiGameState.getDetectiveLocations();
@@ -120,7 +120,6 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
             System.out.println("Running main");
 
 
-//          Allows program to be closed with ^d
             while (true) {
                 System.out.println("Running game");
                 gameSimulator.runGame();

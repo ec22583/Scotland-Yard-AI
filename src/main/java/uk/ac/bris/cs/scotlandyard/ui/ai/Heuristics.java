@@ -282,42 +282,35 @@ public interface Heuristics {
                   * @throws IllegalStateException if file is not in a valid format.
                   * @throws IOException if it is unable to read the file given.
                   * */
-                 static public MinDistanceData buildFromContinuedFile (File file) {
+                 static public MinDistanceData buildFromContinuedFile (File file) throws IOException, IllegalStateException {
                      ImmutableMap.Builder<MinDistance, Category> builder = ImmutableMap.builder();
 
-                     try {
+//                     String input = Resources.toString(
+//                         Resources.getResource("min-distance-data.txt"),
+//                         StandardCharsets.UTF_8
+//                    );
 
-//                         String input = Resources.toString(
-//                             Resources.getResource("min-distance-data.txt"),
-//                             StandardCharsets.UTF_8
-//                        );
-
-                         //buffers the characters in the file for efficient reading
-                         BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+                     //buffers the characters in the file for efficient reading
+                     BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
 
 //                       Skip header
-                         bufferedReader.readLine();
+                     bufferedReader.readLine();
 
-                         String input = bufferedReader.readLine();
-                         while(input != null) {
-                             //Splits the strign every comma
-                             String[] fields = input.split(",");
+                     String input = bufferedReader.readLine();
+                     while(input != null) {
+                         //Splits the string every comma
+                         String[] fields = input.split(",");
 
-                             //Must have three arguments: Category, total hits and total possible
-                             if (fields.length != 3) throw new IllegalStateException("File in invalid format");
-                             builder.put(
-                                     MinDistance.valueOf(fields[0]),
+                         //Must have three arguments: Category, total hits and total possible
+                         if (fields.length != 3) throw new IllegalStateException("File in invalid format");
+                         builder.put(
+                                 MinDistance.valueOf(fields[0]),
 
-                                             //Construct a category object with given total hits and total possible
-                                             new Category(Integer.parseInt(fields[1]), Integer.parseInt(fields[2]))
-                             );
+                                         //Construct a category object with given total hits and total possible
+                                         new Category(Integer.parseInt(fields[1]), Integer.parseInt(fields[2]))
+                         );
 
-                             input = bufferedReader.readLine();
-                         }
-
-                     } catch (IOException e) {
-                         System.out.println("Cannot read 'min-distance-data.txt'");
-                         System.exit(1);
+                         input = bufferedReader.readLine();
                      }
 
                      return new MinDistanceData(builder.build());
@@ -344,7 +337,7 @@ public interface Heuristics {
                      //Total correct locations of Mr X
                      private int totalHits;
 
-                     //Total number of times it was possible for it to be alocation of Mr X
+                     //Total number of times it was possible for it to be a location of Mr X
                      private int totalPossible;
 
                      //Default constructor
