@@ -14,8 +14,8 @@ import static uk.ac.bris.cs.scotlandyard.model.ScotlandYard.MRX_LOCATIONS;
 
 public class PossibleLocationsFactory {
 
-    //Thing to produce
-    private final class MyPossibleLocations implements PossibleLocations {
+    @SuppressWarnings("UnstableApiUsage")
+    private static final class MyPossibleLocations implements PossibleLocations {
 
         private final ImmutableSet<Integer> locations;
         private final int turn;
@@ -85,12 +85,12 @@ public class PossibleLocationsFactory {
             return builder.build();
         }
 
-        @Nonnull
         /**
          * Helper function to updateLocations
          * @param locations locations to filter out
          * @param detectiveLocations detective locations to be filtered out of locations
          * */
+        @Nonnull
         private static ImmutableSet<Integer> filterDetectiveLocationsFromLocations(Collection<Integer> locations,
                                                                     Collection<Integer> detectiveLocations){
             return ImmutableSet.copyOf(locations
@@ -99,11 +99,11 @@ public class PossibleLocationsFactory {
                     .toList());
         }
 
-        @Nonnull
         /**
          * Generate new possible locations based on MrX's ticket (from the log entry)
          * Clears the old possible locations if it is a revealing turn
          * */
+        @Nonnull
         private ImmutableSet<Integer> newLocationsFromLogEntry (LogEntry logEntry,
                                                         Collection<Integer> newLocations,
                                                         Board board,
@@ -129,15 +129,14 @@ public class PossibleLocationsFactory {
             }
 
             List<Integer> detectiveLocations;
-            if (AIGameState.class.isInstance(board)) {
+            if (board instanceof AIGameState) {
                 detectiveLocations = ((AIGameState) board).getDetectiveLocations();
-            } else {
+            }
+            else {
                 detectiveLocations = BoardHelpers.getDetectiveLocations(board);
             }
 
-//            Test for if accidentally pruning too many locations.
-            Set<Integer> newLocations = this.getLocations();
-//            Set<Integer> newLocations = filterDetectiveLocationsFromLocations(this.getLocations(), detectiveLocations);
+          Set<Integer> newLocations = filterDetectiveLocationsFromLocations(this.getLocations(), detectiveLocations);
 
             if (board.getMrXTravelLog().size() > this.turn) {
 //              Mr X has moved, so generate new possible locations and filter out any which detectives are in

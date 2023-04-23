@@ -6,10 +6,10 @@ import uk.ac.bris.cs.scotlandyard.model.Board;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+/**
+ * Stores the current possible locations for Mr X.
+ */
 public interface PossibleLocations {
-//  Creates a new PossibleLocations based on the ticket(s) used by MrX.
-//  Pre-condition: Must only be a single turn (single move/double move) from previous state.
-
     /**
      * Generates the new possible locations based on the current locations and the new game state.
      * @param board Current Game Board.

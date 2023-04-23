@@ -5,13 +5,16 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 import uk.ac.bris.cs.scotlandyard.model.ScotlandYard;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+/**
+ * All created visitors for {@link Move}
+ */
 interface MoveVisitors {
-    //  Returns all tickets used in a move.
-    public class TicketVisitor implements Move.Visitor<List<ScotlandYard.Ticket>> {
+    /**
+     * Gets a list of Tickets which are used for a move.
+     */
+    class TicketVisitor implements Move.Visitor<List<ScotlandYard.Ticket>> {
         @Override
         public List<ScotlandYard.Ticket> visit(Move.SingleMove move) {
             return ImmutableList.of(move.ticket);
@@ -23,8 +26,10 @@ interface MoveVisitors {
         }
     }
 
-    //  Returns the final destination of a move.
-    public class DestinationVisitor implements Move.Visitor<Integer>{
+    /**
+     * Gets final destination for move.
+     */
+    class DestinationVisitor implements Move.Visitor<Integer>{
         Integer destination;
 
         @Override
@@ -40,8 +45,10 @@ interface MoveVisitors {
         }
     }
 
-    //  Returns the move as SingleMoves.
-    public class SingleMoveVisitor implements Move.Visitor<List<Move.SingleMove>> {
+    /**
+     * Splits a {@link Move} into separate {@link uk.ac.bris.cs.scotlandyard.model.Move.SingleMove} objects.
+     */
+    class SingleMoveVisitor implements Move.Visitor<List<Move.SingleMove>> {
         List<Move.SingleMove> moves = new ArrayList<>();
 
         @Override
@@ -50,6 +57,11 @@ interface MoveVisitors {
             return moves;
         }
 
+        /**
+         * Decomposes double move into two separate single moves.
+         * @param move Double move to split.
+         * @return Two single moves in a list.
+         */
         @Override
         public List<Move.SingleMove> visit(Move.DoubleMove move) {
             Move.SingleMove move1 = new Move.SingleMove(move.commencedBy(), move.source(), move.ticket1, move.destination1);

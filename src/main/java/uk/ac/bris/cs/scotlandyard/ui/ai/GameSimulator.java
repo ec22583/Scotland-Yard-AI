@@ -17,18 +17,34 @@ public class GameSimulator {
     private final AIGameStateFactory aiGameStateFactory;
     private final Pair<Long, TimeUnit> timeoutPair;
 
+    /**
+     * Allows data to be collected about simulated game.
+     */
     public interface GameObserver {
+
+        /**
+         * Called when simulated game begins
+         */
         default void onGameStart() {}
 
+        /**
+         * Called during a turn in a game
+         * @param aiGameState Game state from before move is carried out.
+         * @param move move to be used on aiGameState.
+         */
         default void onGameTurn(AIGameState aiGameState, Move move) {}
 
+        /**
+         * Called when a game has finished (win state is reached)
+         * @param aiGameState Winning game state.
+         * */
         default void onGameWin(AIGameState aiGameState) {}
     }
 
     /**
-     * @param gameSetup board for the game
-     * @param aiGameStateFactory factory to generate the game states for the AI
-     * @param timeoutPair amount of time the thread lasts for
+     * @param gameSetup Game setup for simulated games.
+     * @param aiGameStateFactory Factory to generate game states for the AI
+     * @param timeoutPair Time limit per turn.
      * */
     public GameSimulator (GameSetup gameSetup, AIGameStateFactory aiGameStateFactory, Pair<Long, TimeUnit> timeoutPair) {
 
@@ -65,7 +81,7 @@ public class GameSimulator {
     }
 
     /**
-     * Start simulation of the game to genderate the dataset
+     * Start simulation of game
      * */
     public void runGame () {
         MyAi ai = new MyAi();

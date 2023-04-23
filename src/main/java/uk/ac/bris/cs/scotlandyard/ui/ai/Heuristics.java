@@ -15,7 +15,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.Buffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -45,6 +44,9 @@ public interface Heuristics {
             boolean execute(Move move, AIGameState gameState);
         }
 
+        /**
+         * Filter any secret tickets used in the first two rounds of the game.
+         * */
         public static class RemoveFromFirstTwoRounds implements FilterStrategy {
             @Override
             public boolean execute(Move move, AIGameState gameState) {
@@ -62,6 +64,10 @@ public interface Heuristics {
             }
         }
 
+        /**
+         * Filter any secret tickets that are used in the rounds where MrX are revealed
+         * (Normally 3, 8, 13, 18, 24)
+         * */
         public static class RemoveFromRevealingRound implements FilterStrategy {
             @Override
             public boolean execute(Move move, AIGameState gameState) {
@@ -83,6 +89,10 @@ public interface Heuristics {
             }
         }
 
+        /**
+         * Filter any secret tickets where all possible destinations can be accessed with a taxi ticket instead
+         * (Prevents wasteful usage of secret tickets)
+         * */
         @SuppressWarnings("UnstableApiUsage")
         public static class AllPossibleLocationsHaveTaxis implements FilterStrategy {
             @Override
@@ -129,6 +139,7 @@ public interface Heuristics {
             }
 
             /**
+             * Checks a move against all three filter strategies
              * @param move      Move to be checked
              * @param gameState game state to pass in any required information for the filter algorithms
              * @return boolean if move satisfies all filtering
@@ -141,7 +152,8 @@ public interface Heuristics {
                             .stream()
                             .allMatch(f -> f.execute(move, gameState));
                 }
-                // If the move commenced is done by a detective.
+
+                // If the move commenced is done by a detective. (no need to filter)
                 return true;
             }
     }
@@ -262,8 +274,9 @@ public interface Heuristics {
         }
 
          interface LocationCategorization {
+             @SuppressWarnings("UnstableApiUsage")
              class MinDistanceData {
-                 private ImmutableMap<MinDistance, Category> data;
+                 private final ImmutableMap<MinDistance, Category> data;
 
                  private MinDistanceData(ImmutableMap<MinDistance, Category> data) {
                      this.data = data;
@@ -285,24 +298,24 @@ public interface Heuristics {
                  static public MinDistanceData buildFromContinuedFile (File file) throws IOException {
                      ImmutableMap.Builder<MinDistance, Category> builder = ImmutableMap.builder();
 
-                     //buffers the characters in the file for efficient reading
+//                   Buffers the characters in the file for efficient reading
                      BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
 
-//                       Skip header
+//                   Skip header
                      bufferedReader.readLine();
 
                      String input = bufferedReader.readLine();
                      while(input != null) {
-                         //Splits the string every comma
-                         String[] fields = input.split(",");
+//                      Splits the string every comma
+                        String[] fields = input.split(",");
 
-                         //Must have three arguments: Category, total hits and total possible
+//                       Must have three arguments: Category, total hits, and total possible
                          if (fields.length != 3) throw new IOException("File in invalid format");
                          builder.put(
                                  MinDistance.valueOf(fields[0]),
 
-                                         //Construct a category object with given total hits and total possible
-                                         new Category(Integer.parseInt(fields[1]), Integer.parseInt(fields[2]))
+//                               Construct a category object with given total hits and total possible
+                                 new Category(Integer.parseInt(fields[1]), Integer.parseInt(fields[2]))
                          );
 
                          input = bufferedReader.readLine();
@@ -324,6 +337,7 @@ public interface Heuristics {
                          StandardCharsets.UTF_8
                     );
 
+//                   Splits on any new lines.
                      String[] lines = input.split("\\R");
 
                      for (int i = 1; i < lines.length; i++) {
@@ -342,26 +356,50 @@ public interface Heuristics {
                      return new MinDistanceData(builder.build());
                  }
 
+                 /**
+                  * @param category Category to get total hits for
+                  * @return Total hits for category
+                  */
                  public int getTotalHits(MinDistance category) {
                      return this.data.get(category).getTotalHits();
                  }
 
+                 /**
+                  * @param category Category to get total possible for
+                  * @return Total possible for category
+                  */
                  public int getTotalPossible(MinDistance category) {
                      return this.data.get(category).getTotalPossible();
                  }
 
+                 /**
+                  * Get probability that possible location is actual location for category
+                  * @param category Category to get hit probability for.
+                  * @return Hit probability for category.
+                  */
                  public double getHitProbability (MinDistance category) {
                      return ((double) this.getTotalHits(category) / this.getTotalPossible(category));
                  }
 
+                 /**
+                  * Adds a hit for a category.
+                  * @param category Category to add hit for
+                  */
                  public void addHit(MinDistance category) {
                      this.data.get(category).addHit();
                  }
 
+                 /**
+                  *  Adds a miss for a category
+                  * @param  category Category to add a miss for
+                  *  */
                  public void addMiss(MinDistance category) {
                      this.data.get(category).addMiss();
                  }
 
+                 /**
+                  * Specific category for a classification.
+                  */
                  static private class Category {
 
                      //Total correct locations of Mr X
@@ -401,7 +439,7 @@ public interface Heuristics {
 
              /**
               * Minimum distance from a detective to Mr X.
-              * Categorized by distance in stations
+              * Categorized by distance in turns
               * */
              enum MinDistance {
                  ONE,
@@ -412,7 +450,7 @@ public interface Heuristics {
 
                  /**
                   * Given an int return the category.
-                  * @throws IllegalArgumentException if int given is less than 0
+                  * @throws IllegalArgumentException if int invalid distance (less than or equal to 0)
                   * */
                  public static MinDistance getCategoryFromDistance(int distance) {
                      if (distance <= 0) throw new IllegalArgumentException("Distance must be > 0");

@@ -16,7 +16,7 @@ import java.util.*;
  * <a href="https://www.youtube.com/watch?v=wuSQpLinRB4">https://www.youtube.com/watch?v=wuSQpLinRB4</a>
  */
 public class Node {
-    final private AIGameState gameState;
+    private AIGameState gameState;
     private Move previousMove = null;
     final private Piece piece; // Either MrX or a Detective
     final private List<Move> remainingMoves; // Pre-filtered
@@ -29,10 +29,11 @@ public class Node {
     final private List<Node> children;
     final private Node parent;
     final private Node root;
-    final private PossibleLocations possibleLocations;
+    private PossibleLocations possibleLocations;
     final private Heuristics.MoveFiltering moveFilter;
     final private Heuristics.CoalitionReduction coalitionReduction;
     final private Heuristics.ExplorationCoefficient explorationCoefficient;
+    final private boolean notGameOver;
 
     /**
      * Helper function to Constructors
@@ -75,6 +76,7 @@ public class Node {
         this.totalValue = 0;
         this.totalPlays = 0;
         this.children = new ArrayList<>(this.remainingMoves.size());
+        this.notGameOver = this.gameState.getWinner().isEmpty();
     }
 
 
@@ -112,10 +114,11 @@ public class Node {
 
         this.totalValue = 0.0;
         this.totalPlays = 0.0;
+        this.notGameOver = this.gameState.getWinner().isEmpty();
     }
 
-    public AIGameState getGameState () {
-        return this.gameState;
+    public Optional<AIGameState> getGameState () {
+        return Optional.ofNullable(this.gameState);
     }
 
     public Piece getPiece () {
@@ -141,27 +144,24 @@ public class Node {
     public Node getParent (){ return this.parent; }
 
     /**
-     * Getter method
-     *
      * @return Current state of possible locations for game state.
      */
-    public PossibleLocations getPossibleLocations () {
-        return this.possibleLocations;
+    public Optional<PossibleLocations> getPossibleLocations () {
+        return Optional.ofNullable(this.possibleLocations);
     }
 
     /**
      * Gets the child with the most visits, meaning that the child is the most promising.
-     *
      * @return Child with the most visits.
      * @throws IllegalStateException if node has no children
      * */
     @Nonnull
     public synchronized Node getBestChild () {
+        if (this.children.isEmpty()) throw new IllegalStateException("Cannot get best child of leaf node");
+
         // Post conditions will ensure score > -Infinity and bestChild will exist
         double bestScore = Double.NEGATIVE_INFINITY;
-        Node bestChild = null;
-
-        if (this.children.isEmpty()) throw new IllegalStateException("Cannot get best child of leaf node");
+        Node bestChild = this.children.get(0);
 
         for (Node child : this.children) {
             double currentScore = child.getTotalPlays();
@@ -177,8 +177,6 @@ public class Node {
     /**
      * Either expands and adds a child, or selects the best child, depending on if the node is fully
      * expanded.
-     * you can only expand or select one at a time
-     *
      * @return Pair with child Node on left, and boolean (false if expanded, true if selected).
      */
     public synchronized Pair<Node, Boolean> expandOrSelect() {
@@ -224,6 +222,12 @@ public class Node {
         );
         this.children.add(newNode);
 
+//      Culls unnecessary data from node to reduce memory usage.
+        if (remainingMoves.isEmpty()) {
+            this.gameState = null;
+            this.possibleLocations = null;
+        }
+
         return newNode;
     }
 
@@ -234,8 +238,8 @@ public class Node {
      *
      * @param childNode childNode to evaluate UCB on
      * @return Evaluation of the UCB1 equation of the child node
-     * @throws IllegalArgumentException if child is not defined
-     * @throws IllegalArgumentException if the childNode given as parameter is not the child of the node.
+     * @throws IllegalArgumentException If child is not defined
+     * @throws IllegalArgumentException If the childNode given as parameter is not the child of the node.
      * */
     private double calculateUCB (Node childNode) {
         double EXPLORATION_VALUE = this.piece.isMrX() ?
@@ -290,7 +294,7 @@ public class Node {
     }
 
     public boolean isNotGameOver() {
-        return this.getGameState().getWinner().isEmpty();
+        return this.notGameOver;
     }
 
 

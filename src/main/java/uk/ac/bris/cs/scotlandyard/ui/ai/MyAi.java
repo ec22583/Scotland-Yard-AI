@@ -15,33 +15,39 @@ import uk.ac.bris.cs.scotlandyard.model.Move;
 public class MyAi implements Ai {
 	private MrXAI mrXAI;
 	private DetectiveAI detectiveAI;
-	private DistancesSingleton distances;
 
 	public void onStart() {
-		this.distances = DistancesSingleton.getInstance();
 		this.mrXAI = new MrXAI();
-		this.detectiveAI = new DetectiveAI(this.distances);
+		this.detectiveAI = new DetectiveAI(DistancesSingleton.getInstance());
 	}
 
+	/**
+	 * @return Awesome name :D
+	 */
 	@Nonnull @Override
 	public String name() {
-		return "AI<MCTS>";
+		return "Pair<AI<MCTS>, Pair<ThomasParr, WallaceDegamo>>";
 	}
 
 	@Nonnull @Override
 	public Move pickMove(@Nonnull Board board, Pair<Long, TimeUnit> timeoutPair) {
-
 		List<Move> availableMoves = board.getAvailableMoves().asList();
+		Move bestMove;
 
 //		Create game state from board
 //		Check if current player is MrX.
 		if (availableMoves.get(0).commencedBy().isMrX()) {
-			return mrXAI.generateBestMove(board, timeoutPair);
+			bestMove = mrXAI.generateBestMove(board, timeoutPair);
 		}
 //		Run detectives' turn
 		else {
-			return detectiveAI.generateBestMove(board, timeoutPair);
+			bestMove = detectiveAI.generateBestMove(board, timeoutPair);
 		}
+
+//		Calls garbage collector for more aggressive garbage collection
+		System.gc();
+
+		return bestMove;
 	}
 
 	public void onTerminate() {}

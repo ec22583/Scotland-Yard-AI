@@ -10,6 +10,9 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * Used to generate data regarding how Mr X moves for training a prediction system.
+ */
 public class GenerateDataSet implements GameSimulator.GameObserver {
     private final FileWriter output;
 
@@ -69,8 +72,7 @@ public class GenerateDataSet implements GameSimulator.GameObserver {
     }
 
     /**
-     * @param  aiGameState AI game state to modify
-     * @param move move to use.
+     * Creates data for turn
      * */
     @Override
     public void onGameTurn (AIGameState aiGameState, Move move) {
@@ -97,6 +99,10 @@ public class GenerateDataSet implements GameSimulator.GameObserver {
         }
     }
 
+    /**
+     * Runs dataset generation.
+     * @param args Arguments passed in from command line.
+     */
     @SuppressWarnings("UnstableApiUsage")
     public static void main (String[] args) {
         try {

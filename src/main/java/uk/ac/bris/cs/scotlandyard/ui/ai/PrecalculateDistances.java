@@ -18,10 +18,9 @@ import java.util.stream.IntStream;
  * using Dijkstra's algorithm. The file will be used as a lookup table of O(1) time for Localization Categorization
  * and E-Greedy playouts heuristic.
  * */
+@SuppressWarnings("UnstableApiUsage")
 public class PrecalculateDistances {
     private Table<Integer, Integer, Integer> distances;
-    private int min;
-    private int max;
     private ImmutableValueGraph<Integer, ImmutableSet<ScotlandYard.Transport>> graph;
 
     public PrecalculateDistances () {
@@ -33,13 +32,13 @@ public class PrecalculateDistances {
                             Resources.getResource("graph.txt"),
                             StandardCharsets.UTF_8)
             );
-            min = graph.nodes().stream().mapToInt(Integer::intValue).min().orElseThrow();
-            max = graph.nodes().stream().mapToInt(Integer::intValue).max().orElseThrow();
+            int min = graph.nodes().stream().mapToInt(Integer::intValue).min().orElseThrow();
+            int max = graph.nodes().stream().mapToInt(Integer::intValue).max().orElseThrow();
 
-            //Create a list of nodes of the graph (1-200)
+//          Create a list of nodes of the graph (1-199)
             List<Integer> range = IntStream.rangeClosed(min, max).boxed().toList();
 
-            //200 * 200 lookup table
+//          199 * 199 table to store distances
             distances = ArrayTable.create(range, range);
         } catch (IOException e) {
             System.err.println("Could not read graph from 'graph.txt'");
@@ -76,10 +75,10 @@ public class PrecalculateDistances {
     }
 
     public void dijkstras (int startPosition, Map<Integer, Integer> row) {
-//      Sorts into order based on current distance from start location.
+//      Sorts into order based on current distance from start location (row::get gets distance for a location).
         PriorityQueue<Integer> queue = new PriorityQueue<>(Comparator.comparing(row::get));
 
-        //Distance to self is 0 (graph is known to not have self-loops)
+//      Distance to self is 0 (graph is known to not have self-loops)
         row.put(startPosition, 0);
         queue.add(startPosition);
 
@@ -87,14 +86,14 @@ public class PrecalculateDistances {
 
         while(!queue.isEmpty()) {
 
-            //Retrive the node with the shortest overall distance (and remove it from queue)
+//          Retrieve the node with the shortest overall distance (and remove it from queue)
             currentPosition = queue.poll();
             int currentDistance = row.get(currentPosition);
             Set<EndpointPair<Integer>> edges = graph.incidentEdges(currentPosition);
 
             int finalCurrentPosition = currentPosition;
 
-            //Extract all connections regardless of ticket type
+//          Extract all connections regardless of ticket type
             List<Integer> connectingNodes = edges
                     .stream()
                     .map((edge) -> edge.adjacentNode(finalCurrentPosition))
@@ -103,14 +102,12 @@ public class PrecalculateDistances {
 
             for (int connectingNode : connectingNodes) {
 
-                //if connecting node's distance is more than current shortest distance + 1
+//              If connecting node's distance is more than current shortest distance + 1
                 if (row.get(connectingNode) > currentDistance + 1) {
                     row.put(connectingNode, currentDistance + 1);
 
-                    //Remove the connecting node from queue once processed
-                    if (queue.contains(connectingNode)) {
-                        queue.remove(connectingNode);
-                    }
+//                  Remove the connecting node from queue once processed
+                    queue.remove(connectingNode);
                     queue.add(connectingNode);
                 }
             }

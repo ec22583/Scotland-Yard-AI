@@ -11,13 +11,17 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-public class DetectiveAI implements AI{
+public class DetectiveAI implements PlayerAI {
+    private static final long BUFFER = 200;
     private PossibleLocations possibleLocations;
     final private AIGameStateFactory aiGameStateFactory;
     final private PossibleLocationsFactory possibleLocationsFactory;
     final private DistancesSingleton distances;
     private Heuristics.LocationCategorization.MinDistanceData minDistanceData;
 
+    /**
+     * @param distances Table of precalculated distances for graph.
+     *  */
     public DetectiveAI (DistancesSingleton distances) {
         this.distances = distances;
         this.aiGameStateFactory = new AIGameStateFactory();
@@ -32,7 +36,10 @@ public class DetectiveAI implements AI{
 
     }
 
-
+    /**
+     * Filter out winning game states
+     * @param gameStates gamestates to be inspected as winning game states
+     * */
     private List<Pair<AIGameState, Integer>> removeWinningGamestates(List<Pair<AIGameState, Integer>> gameStates){
         return gameStates
                 .stream()
@@ -44,30 +51,17 @@ public class DetectiveAI implements AI{
                 .toList();
     }
 
-    private List<Pair<AIGameState, Double>> createWeightedGameStates(List<Pair<AIGameState, Integer>> gamestates,
+    /**
+     * Given an already filtered list of non-winning game states, use the distances to possible Mr X and detectives to
+     * generate a weighting.
+     * @param gameStates Pairs of game states and their corresponding possible location.
+     * @param detectiveLocations Detective locations used to find distances to Mr X.
+     * @return list of pairs of AIGameState and the Double representing their weightings.
+     * */
+    private List<Pair<AIGameState, Double>> createWeightedGameStates(List<Pair<AIGameState, Integer>> gameStates,
                                                                      List<Integer> detectiveLocations){
 
-//        List<Pair<AIGameState, Double>> weightedGameStates= gamestates
-//                .stream()
-//                //Generate a Pair<AIGameState, MinDistance>
-//                .map(p -> {
-//                    return new Pair<>(
-//                            p.left(),
-//                            MinDistance.getCategoryFromDistance(
-//                                detectiveLocations
-//                                        .stream()
-//                                        .mapToInt(l -> distances.get(l, p.right()))
-//                                        .min()
-//                                        .orElseThrow()
-//                        )
-//                    );
-//                })
-//                //Generate it again into a Pair<AiGameState, Double>
-//                .map(p ->
-//                        new Pair<>(p.left(), this.minDistanceData.getHitProbability(p.right())))
-//                .toList();
-
-        List<Pair<AIGameState, Double>> weightedGameStates = gamestates
+        return gameStates
                 .stream()
                 //Generate a Pair<AIGameState, Double>
                 .map(p -> {
@@ -89,15 +83,8 @@ public class DetectiveAI implements AI{
                     );
                 })
                 .toList();
-
-        return weightedGameStates;
     }
 
-    /**
-     * Given the game state, generate the best move for Detective
-     * @param board game state in which to evaluate the best move
-     * @param timeoutPair amount of time the thread lasts for
-     * */
     @Override @Nonnull
     public Move generateBestMove(Board board, Pair<Long, TimeUnit> timeoutPair) {
         if (this.possibleLocations == null) {
@@ -105,12 +92,15 @@ public class DetectiveAI implements AI{
         }
         this.possibleLocations = this.possibleLocations.updateLocations(board);
 
+//      Gets all possible game states for turn.
         List<Pair<AIGameState, Integer>> gameStates = aiGameStateFactory.buildDetectiveGameStates(board, this.possibleLocations);
+
         List<Integer> detectiveLocations = gameStates.get(0).left().getDetectiveLocations();
 
 //      Remove any already winning game states since they are not possible.
         gameStates = removeWinningGamestates(gameStates);
 
+//      Pairs of game states and their weightings for random selection.
         List<Pair<AIGameState, Double>> weightedGameStates = createWeightedGameStates(gameStates, detectiveLocations);
 
         double totalWeight = weightedGameStates
@@ -119,7 +109,7 @@ public class DetectiveAI implements AI{
                 .mapToDouble(Double::doubleValue)
                 .sum();
 
-        // extract a random double from the total weight
+//      Generates a random double from 0 to totalWeight exclusive
         double randomDouble = new Random().nextDouble(totalWeight);
 
         AIGameState gameState = weightedGameStates.get(0).left();
@@ -134,17 +124,6 @@ public class DetectiveAI implements AI{
             i++;
         }
 
-        //create a Node with all heuristics fed in
-        Node mctsTree = new Node(
-                gameState,
-                this.possibleLocations,
-                new Heuristics.MoveFiltering(),
-                new Heuristics.CoalitionReduction(),
-                new Heuristics.ExplorationCoefficient()
-        );
-
-        AI.runThreads(mctsTree, timeoutPair);
-
-        return mctsTree.getBestChild().getPreviousMove();
+        return PlayerAI.runMCTSForGameState(gameState, possibleLocations, timeoutPair, BUFFER);
     }
 }

@@ -12,7 +12,8 @@ import java.util.*;
 // A factory to create game states such that the AIs can use it
 // We took this from our Cw-Model coursework (closed task) and modified it for the open task
 public class AIGameStateFactory {
-    private final static class MyGameState implements AIGameState {
+    @SuppressWarnings("UnstableApiUsage")
+	private final static class MyGameState implements AIGameState {
         final private GameSetup setup;
 		final private ImmutableSet<Piece> remaining;
 		final private ImmutableList<LogEntry> log;
@@ -664,43 +665,11 @@ public class AIGameStateFactory {
 			);
 		}
 
-		/**
-		 *
-		 * @return List of
-			"mrxlocation," +
-			"detectivelocation1," +
-			"detectivelocation2," +
-			"detectivelocation3," +
-			"detectivelocation4," +
-			"detectivelocation5," +
-			"detective1taxi," +
-			"detective1bus," +
-			"detective1train," +
-			"detective2taxi," +
-			"detective2bus," +
-			"detective2train," +
-			"detective3taxi," +
-			"detective3bus," +
-			"detective3train," +
-			"detective4taxi," +
-			"detective4bus," +
-			"detective4train," +
-			"detective5taxi," +
-			"detective5bus," +
-			"detective5train," +
-			"mrxtaxi" +
-			"mrxbus" +
-			"mrxtrain" +
-			"mrxdouble" +
-			"mrxsecret" +
-			"turnsleft" +
-			"newmrxlocation" +
-		 */
 		public List<Integer> getGameStateList () {
 			List<Integer> output = new ArrayList<>();
 			output.add(mrX.location());
 			output.addAll(detectives.stream().map(Player::location).toList());
-			List<ImmutableMap<ScotlandYard.Ticket, Integer>> detectivesTickets = detectives.stream().map(d -> d.tickets()).toList();
+			List<ImmutableMap<ScotlandYard.Ticket, Integer>> detectivesTickets = detectives.stream().map(Player::tickets).toList();
 			for (ImmutableMap<ScotlandYard.Ticket, Integer> detectiveTickets : detectivesTickets) {
 				output.add(detectiveTickets.get(ScotlandYard.Ticket.TAXI));
 				output.add(detectiveTickets.get(ScotlandYard.Ticket.BUS));

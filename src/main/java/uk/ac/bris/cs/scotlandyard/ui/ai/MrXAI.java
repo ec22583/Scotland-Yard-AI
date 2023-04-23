@@ -6,11 +6,11 @@ import uk.ac.bris.cs.scotlandyard.model.*;
 import javax.annotation.Nonnull;
 import java.util.concurrent.*;
 
-// Separate AI Entity Behaviour
-public class MrXAI implements AI {
-    private AIGameStateFactory aiGameStateFactory;
+public class MrXAI implements PlayerAI {
+    private static final long BUFFER = 200;
+    private final AIGameStateFactory aiGameStateFactory;
     private PossibleLocations possibleLocations;
-    private PossibleLocationsFactory possibleLocationsFactory;
+    private final PossibleLocationsFactory possibleLocationsFactory;
 
     public MrXAI () {
         this.aiGameStateFactory = new AIGameStateFactory();
@@ -31,16 +31,11 @@ public class MrXAI implements AI {
 
         AIGameState gameState = this.aiGameStateFactory.buildMrXGameState(board);
 
-        Node mctsTree = new Node(
+        return PlayerAI.runMCTSForGameState(
                 gameState,
-                this.possibleLocations,
-                new Heuristics.MoveFiltering(),
-                new Heuristics.CoalitionReduction(),
-                new Heuristics.ExplorationCoefficient()
+                possibleLocations,
+                timeoutPair,
+                BUFFER
         );
-
-        AI.runThreads(mctsTree, timeoutPair);
-
-        return mctsTree.getBestChild().getPreviousMove();
     }
 }

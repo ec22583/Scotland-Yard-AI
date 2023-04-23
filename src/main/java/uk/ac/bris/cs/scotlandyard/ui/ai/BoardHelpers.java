@@ -7,7 +7,6 @@ import uk.ac.bris.cs.scotlandyard.model.*;
 import javax.annotation.Nonnull;
 import java.util.*;
 
-@SuppressWarnings("ALL")
 /**
  * Series of Helper functions for the Board used in multiple class files
  * */
@@ -16,15 +15,15 @@ public interface BoardHelpers {
     /**
      * Possible starting locations of all players.
      */
-    final int[] START_LOCATIONS = {35, 45, 51, 71, 78, 104, 106, 127, 132, 166, 170, 172};
+    int[] START_LOCATIONS = {35, 45, 51, 71, 78, 104, 106, 127, 132, 166, 170, 172};
 
     @Nonnull
     static ImmutableList<Player> getDetectives (Board board){
 
-        List<Player> detectives = new LinkedList<Player>(board
+        List<Player> detectives = new LinkedList<>(board
                 .getPlayers()
                 .stream()
-                .filter(p -> p.isDetective())
+                .filter(Piece::isDetective)
                 .map(piece -> {
                             Optional<Integer> locationOptional = board.getDetectiveLocation((Piece.Detective) piece);
                             if (locationOptional.isEmpty())
@@ -47,7 +46,8 @@ public interface BoardHelpers {
 
 
     /**
-     * Gets the locations of all detectives from the current board.
+     * Gets the locations of all detectives from the current board
+     * @apiNote If possible, use {@link AIGameState#getDetectiveLocations()} as it is faster
      * @param board Current Game State
      * @return List of locations for detectives
      * @throws IllegalArgumentException if a location for a detective cannot be found.
@@ -66,11 +66,11 @@ public interface BoardHelpers {
     }
 
     /**
-     * Gets a map of tickets and the number of owned tickets by player.
+     * Gets a map of tickets and their corresponding total for player.
      * @param board Current Game State
      * @param piece Piece to get tickets of
-     * @return A map of tickets and the number owned
-     * @throws IllegalArgumentException if player doesn't eixst
+     * @return A map of tickets and corresponding number owned
+     * @throws IllegalArgumentException if player doesn't exist
      */
     static ImmutableMap<ScotlandYard.Ticket, Integer> getTicketsForPlayer (Board board, Piece piece) {
 //      Get a TicketBoard of tickets
@@ -78,37 +78,14 @@ public interface BoardHelpers {
         if (ticketsOptional.isEmpty()) throw new IllegalArgumentException("Player does not exist.");
         Board.TicketBoard tickets = ticketsOptional.get();
 
-        // Generates map of ticket values from current TicketBoard state.
+//      Generates map of ticket values from current TicketBoard state.
         Map<ScotlandYard.Ticket, Integer> ticketMap = new HashMap<>();
 
-        //Go over through all ticket types
+//      Go over through all ticket types
         for (ScotlandYard.Ticket ticketType : ScotlandYard.Ticket.values()) {
             ticketMap.put(ticketType, tickets.getCount(ticketType));
         }
 
         return ImmutableMap.copyOf(ticketMap);
-    }
-
-    /**
-     * Returns an updated game setup with Mr X's moves revealed so that it is easier to track for the AI.
-     * @param board Current Game State
-     * @return gameSetup Game setup with all of Mr X's moves revealed.
-     */
-    static GameSetup generateGameSetup (Board board) {
-        List<Boolean> moveSetup = new LinkedList<>();
-
-//      Ensures that MrX is always visible to himself
-        for (int i = 0; i < board.getSetup().moves.size(); i++) {
-            if (i < board.getMrXTravelLog().size()) {
-                moveSetup.add(board.getMrXTravelLog().get(i).location().isPresent());
-            } else {
-                moveSetup.add(true);
-            }
-        }
-
-        return new GameSetup(
-                board.getSetup().graph,
-                ImmutableList.copyOf(moveSetup)
-        );
     }
 }

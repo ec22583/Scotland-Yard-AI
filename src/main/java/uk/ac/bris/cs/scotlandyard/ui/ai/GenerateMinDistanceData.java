@@ -25,6 +25,9 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
     private final PossibleLocationsFactory possibleLocationsFactory;
     private PossibleLocations possibleLocations;
 
+    /**
+     * @throws IOException if files cannot be created/read from.
+     */
     public GenerateMinDistanceData () throws IOException {
         this.distances = DistancesSingleton.getInstance();
 
@@ -38,14 +41,19 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
 
 
         this.possibleLocationsFactory = new PossibleLocationsFactory();
-        this.possibleLocations = possibleLocationsFactory.buildInitialLocations();
     }
 
+    /**
+     * Initialises {@link PossibleLocations} to initial state on game start.
+     */
     @Override
     public void onGameStart () {
         this.possibleLocations = this.possibleLocationsFactory.buildInitialLocations();
     }
 
+    /**
+     * Writes the current Map of category data to 'min-distance-data.txt'
+     */
     private void writeDataToFile () {
         StringBuilder outputString = new StringBuilder("category,total-hits,total-possible\n");
         for (MinDistance category : MinDistance.values()) {
@@ -62,22 +70,22 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
         }
     }
 
+    /**
+     * Processes categorization data for current turn.
+     * @param aiGameState Game state from before move is carried out.
+     * @param move move to be used on aiGameState.
+     */
     @Override
     public void onGameTurn (AIGameState aiGameState, Move move) {
         aiGameState = aiGameState.advance(move);
         this.possibleLocations = this.possibleLocations.updateLocations(aiGameState);
-        System.out.println("------------------------------------------------------------");
-        System.out.println("Possible locations: " + this.possibleLocations.getLocations());
-        System.out.println("Detective locations: " + aiGameState.getDetectiveLocations());
-        System.out.println("Mr X Location: " + aiGameState.getMrXLocation());
-        System.out.println("Move: " + move);
-        System.out.println("Turn number: " + aiGameState.getMrXTravelLog().size());
-        System.out.println("------------------------------------------------------------");
 
+//      If game not winning state and current turn Mr X's
         if (aiGameState.getWinner().isEmpty() && move.commencedBy().equals(Piece.MrX.MRX)) {
             List<Integer> detectiveLocations = aiGameState.getDetectiveLocations();
             int mrXLocation = aiGameState.getMrXLocation();
 
+//          Actual minimum distance between Mr X and detectives.
             int realMinDistance = detectiveLocations
                     .stream()
                     .map(l -> this.distances.get(mrXLocation, l))
@@ -87,7 +95,7 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
 
             this.data.addHit(MinDistance.getCategoryFromDistance(realMinDistance));
 
-//          Updates map with possible locations.
+//          Updates map with all possible categories for current turn.
             Set<MinDistance> minDistanceSet = ImmutableSet.copyOf(this.possibleLocations
                     .getLocations()
                     .stream()
@@ -100,7 +108,7 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
                     .map(MinDistance::getCategoryFromDistance)
                     .toList());
 
-            minDistanceSet.forEach(d -> this.data.addMiss(d));
+            minDistanceSet.forEach(this.data::addMiss);
 
             this.writeDataToFile();
             System.out.println("Writing update to file");
@@ -124,11 +132,7 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
 
             gameSimulator.registerObserver(generateMinDistanceData);
 
-            System.out.println("Running main");
-
-
             while (true) {
-                System.out.println("Running game");
                 gameSimulator.runGame();
                 System.gc();
             }
