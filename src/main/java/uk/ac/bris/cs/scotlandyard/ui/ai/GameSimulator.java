@@ -19,6 +19,8 @@ public class GameSimulator {
     private final MyAi ai;
 
     public interface GameObserver {
+        default void onGameStart() {}
+
         default void onGameTurn(AIGameState aiGameState, Move move) {}
 
         default void onGameWin(AIGameState aiGameState) {}
@@ -59,7 +61,7 @@ public class GameSimulator {
     /**
      * Remove an observer to the game simulator
      * @param gameObserver game observer to deregister into the function
-     * @throws IllegalArgumentException if there does not exists an observer
+     * @throws IllegalArgumentException if there does not exist an observer
      * */
     public void deregisterObserver (@Nonnull GameObserver gameObserver) {
         Objects.requireNonNull(gameObserver);
@@ -73,6 +75,8 @@ public class GameSimulator {
      * Start simulation of the game to genderate the dataset
      * */
     public void runGame () {
+        this.gameObservers.forEach(GameObserver::onGameStart);
+
         Piece.Detective[] detectiveColors = Piece.Detective.values();
         ImmutableList<Integer> detectiveLocations = ScotlandYard.generateDetectiveLocations(new Random().nextInt(), 5);
 

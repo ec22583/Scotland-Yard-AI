@@ -20,8 +20,9 @@ import static uk.ac.bris.cs.scotlandyard.ui.ai.Heuristics.*;
 
 public class GenerateMinDistanceData implements GameSimulator.GameObserver {
 
-    private LocationCategorization.MinDistanceData data;
+    private final LocationCategorization.MinDistanceData data;
     private final DistancesSingleton distances;
+    private final PossibleLocationsFactory possibleLocationsFactory;
     private PossibleLocations possibleLocations;
 
     public GenerateMinDistanceData () throws IOException {
@@ -36,8 +37,13 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
         }
 
 
-        PossibleLocationsFactory possibleLocationsFactory = new PossibleLocationsFactory();
+        this.possibleLocationsFactory = new PossibleLocationsFactory();
         this.possibleLocations = possibleLocationsFactory.buildInitialLocations();
+    }
+
+    @Override
+    public void onGameStart () {
+        this.possibleLocations = this.possibleLocationsFactory.buildInitialLocations();
     }
 
     private void writeDataToFile () {
@@ -58,6 +64,7 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
 
     @Override
     public void onGameTurn (AIGameState aiGameState, Move move) {
+        aiGameState = aiGameState.advance(move);
         this.possibleLocations = this.possibleLocations.updateLocations(aiGameState);
         System.out.println("------------------------------------------------------------");
         System.out.println("Possible locations: " + this.possibleLocations.getLocations());
@@ -67,7 +74,7 @@ public class GenerateMinDistanceData implements GameSimulator.GameObserver {
         System.out.println("Turn number: " + aiGameState.getMrXTravelLog().size());
         System.out.println("------------------------------------------------------------");
 
-        if (move.commencedBy().equals(Piece.MrX.MRX)) {
+        if (aiGameState.getWinner().isEmpty() && move.commencedBy().equals(Piece.MrX.MRX)) {
             List<Integer> detectiveLocations = aiGameState.getDetectiveLocations();
             int mrXLocation = move.source();
 
