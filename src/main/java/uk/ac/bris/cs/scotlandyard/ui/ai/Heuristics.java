@@ -279,16 +279,11 @@ public interface Heuristics {
                  /**
                   * Extract minimum distance data from a file
                   * @param file file to be used as the data set
-                  * @throws IllegalStateException if file is not in a valid format.
-                  * @throws IOException if it is unable to read the file given.
+                  * @return {@link MinDistanceData} with data from file.
+                  * @throws IOException if it is unable to read the file given or file in incorrect format.
                   * */
-                 static public MinDistanceData buildFromContinuedFile (File file) throws IOException, IllegalStateException {
+                 static public MinDistanceData buildFromContinuedFile (File file) throws IOException {
                      ImmutableMap.Builder<MinDistance, Category> builder = ImmutableMap.builder();
-
-//                     String input = Resources.toString(
-//                         Resources.getResource("min-distance-data.txt"),
-//                         StandardCharsets.UTF_8
-//                    );
 
                      //buffers the characters in the file for efficient reading
                      BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
@@ -302,7 +297,7 @@ public interface Heuristics {
                          String[] fields = input.split(",");
 
                          //Must have three arguments: Category, total hits and total possible
-                         if (fields.length != 3) throw new IllegalStateException("File in invalid format");
+                         if (fields.length != 3) throw new IOException("File in invalid format");
                          builder.put(
                                  MinDistance.valueOf(fields[0]),
 
@@ -316,12 +311,47 @@ public interface Heuristics {
                      return new MinDistanceData(builder.build());
                  }
 
+                 /**
+                  * Extract minimum distance data from file in resources
+                  * @return {@link MinDistanceData} with data from file.
+                  * @throws IOException if it is unable to read the file given or file in incorrect format.
+                  * */
+                 static public MinDistanceData buildFromResources () throws IOException  {
+                     ImmutableMap.Builder<MinDistance, Category> builder = ImmutableMap.builder();
+
+                     String input = Resources.toString(
+                         Resources.getResource("min-distance-data.txt"),
+                         StandardCharsets.UTF_8
+                    );
+
+                     String[] lines = input.split("\\R");
+
+                     for (int i = 1; i < lines.length; i++) {
+                         String[] fields = lines[i].split(",");
+                         if (fields.length != 3) throw new IOException("File not in correct format.");
+                         try {
+                             builder.put(
+                                 MinDistance.valueOf(fields[0]),
+                                 new Category(Integer.parseInt(fields[1]), Integer.parseInt(fields[2]))
+                            );
+                         } catch (NumberFormatException e) {
+                             throw new IOException("File not in correct format.");
+                         }
+                     }
+
+                     return new MinDistanceData(builder.build());
+                 }
+
                  public int getTotalHits(MinDistance category) {
                      return this.data.get(category).getTotalHits();
                  }
 
                  public int getTotalPossible(MinDistance category) {
                      return this.data.get(category).getTotalPossible();
+                 }
+
+                 public double getHitProbability (MinDistance category) {
+                     return ((double) this.getTotalHits(category) / this.getTotalPossible(category));
                  }
 
                  public void addHit(MinDistance category) {

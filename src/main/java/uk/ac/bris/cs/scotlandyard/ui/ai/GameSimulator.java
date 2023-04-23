@@ -16,7 +16,6 @@ public class GameSimulator {
     private final GameSetup gameSetup;
     private final AIGameStateFactory aiGameStateFactory;
     private final Pair<Long, TimeUnit> timeoutPair;
-    private final MyAi ai;
 
     public interface GameObserver {
         default void onGameStart() {}
@@ -32,12 +31,6 @@ public class GameSimulator {
      * @param timeoutPair amount of time the thread lasts for
      * */
     public GameSimulator (GameSetup gameSetup, AIGameStateFactory aiGameStateFactory, Pair<Long, TimeUnit> timeoutPair) {
-        this.ai = new MyAi();
-        this.ai.onStart();
-
-//      Ensures that AI is properly shut down when program closes
-//      (based from https://stackoverflow.com/questions/5824049/running-a-method-when-closing-the-program)
-        Runtime.getRuntime().addShutdownHook(new Thread(this.ai::onTerminate));
 
         this.timeoutPair = timeoutPair;
         this.aiGameStateFactory = aiGameStateFactory;
@@ -75,6 +68,8 @@ public class GameSimulator {
      * Start simulation of the game to genderate the dataset
      * */
     public void runGame () {
+        MyAi ai = new MyAi();
+        ai.onStart();
         this.gameObservers.forEach(GameObserver::onGameStart);
 
         Piece.Detective[] detectiveColors = Piece.Detective.values();
@@ -111,5 +106,6 @@ public class GameSimulator {
 
         AIGameState finalAiGameState1 = aiGameState;
         this.gameObservers.forEach(o -> o.onGameWin(finalAiGameState1));
+        ai.onTerminate();
     }
 }

@@ -24,7 +24,7 @@ public class MrXAI implements AI {
      * */
     @Nonnull @Override
     public Move generateBestMove (Board board, Pair<Long, TimeUnit> timeoutPair) {
-        if (this.possibleLocations == null || board.getMrXTravelLog().size() == 0) {
+        if (this.possibleLocations == null) {
             this.possibleLocations = possibleLocationsFactory.buildInitialLocations();
         }
         this.possibleLocations = this.possibleLocations.updateLocations(board);
